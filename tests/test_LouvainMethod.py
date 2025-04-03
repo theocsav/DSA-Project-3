@@ -1,92 +1,84 @@
 import numpy as np
 
-# wikipedia version
-# seems to recompute modularity for each node, which is inefficient
-# at 300 nodes, it takes around 12 minutes to run. I got a trash laptop tho
+# tried to optimize the wikipedia version
+
 class Graph:
     def __init__(self, graph):
         self.graph = graph
 
-    def compute_modularity(self, graph, partition):
-        # Q = sum_C [ (sum_in/(2m)) - (sum_tot/(2m))^2 ]
-        # where m is the total weight of edges
-        # sum_in is the total weight of edges inside community C
-        # sum_tot is the sum of degrees of nodes in C
+    def compute_total_weight(self, graph):
+        total_weight = 0
 
-        # total edge weight (counted once)
-        m = 0
-        for node, neighbors in graph.items():
-            m += sum(neighbors.values())
-        m /= 2.0
-
-        # compute degree for each node
-        degrees = {}
-        for node, neighbors in graph.items():
-            total = 0
-            for weight in neighbors.values():
-                total += weight
-            degrees[node] = total
-
-        # build community membership
-        communities = {}
-        for node, community in partition.items():
-            if community not in communities:
-                communities[community] = []
-            communities[community].append(node)
+        # go through each node and neighbors
+        for node in graph:
+            # add the weights of all edges from this node
+            for neighbor in graph[node]:
+                total_weight += graph[node][neighbor]
         
-        Q = 0.0
-        for community_nodes in communities.values():
-            sum_in = 0.0
-            sum_tot = 0.0
-            for node in community_nodes:
-                sum_tot += degrees[node]
-                for neighbor, weight in graph[node].items():
-                    if partition[neighbor] == partition[node]:
-                        sum_in += weight
-            # sum_in is counted twice (once for each node in the community)
-            Q += (sum_in / (2 * m)) - ((sum_tot / (2 * m)) ** 2)
-        return Q
+        # since each edge is counted twice, divide by 2
+        return total_weight / 2.0
+    
+    def compute_degrees(self, graph):
+        degrees = {}
+        # loop through each node
+        for node in graph:
+            degree = 0
+            for weight in graph[node].values():
+                degree += weight
+            degrees[node] = degree
+
+        return degrees
     
     def move_nodes(self, graph, partition):
-        # for each node, try to move it to a community that gives it maximum gain in modularity
-        # repeat until no node can be moved to increase modularity
+        m = self.compute_total_weight(graph)
+        degrees = self.compute_degrees(graph)
+
+        # initialize the sum of degrees for each community
+        community_sum = {}
+        for node, commmunity in partition.items():
+            community_sum[commmunity] = community_sum.get(commmunity, 0) + degrees[node]
+
         improvement = True
-        current_modularity = self.compute_modularity(graph, partition)
 
         while improvement:
             improvement = False
 
+            # iterate through all nodes
             for node in list(graph.keys()):
                 current_community = partition[node]
+                k_i = degrees[node]
+
+                # determine candiate communities from neighbors
+                candidate_weights = {}
+                for neighbor, weight in graph[node].items():
+                    community = partition[neighbor]
+                    candidate_weights[community] = candidate_weights.get(community, 0) + weight
+
+                if current_community not in candidate_weights:
+                    candidate_weights[current_community] = 0
+
+                # temporarily remove node from its community
+                community_sum[current_community] -= k_i
+
+                best_delta = 0
                 best_community = current_community
-                best_delta = 0.0
 
-                # try other communities and then put it in the best one
-                candidate_communities = set()
-                for neighbor in graph[node]:
-                    candidate_communities.add(partition[neighbor])
-                # also include its current community in case no move is beneficial
-                candidate_communities.add(current_community)
-
-                # try moving node to each candidate community and compute delta modularity
-                for community in candidate_communities:
-                    # save current community and try candidate
-                    original_community = partition[node]
-                    partition[node] = community
-                    new_modularity = self.compute_modularity(graph, partition)
-                    delta = new_modularity - current_modularity
+                # what gain if moving node to each candidate community
+                for community, k_i_in in candidate_weights.items():
+                    # calculate the sum of weights from node to nodes in cadidate community
+                    delta = k_i_in - (community_sum.get(community, 0) * k_i) / (2 * m)
                     if delta > best_delta:
                         best_delta = delta
                         best_community = community
-                    # revert to original community
-                    partition[node] = original_community
-
-                # if a move improves modularity, do it
-                if best_community != current_community and best_delta > 0:
+                
+                # if moving node improves modularity, update parition and community sums
+                if best_community != current_community:
                     partition[node] = best_community
-                    current_modularity += best_delta
+                    community_sum[best_community] = community_sum.get(best_community, 0) + k_i
                     improvement = True
-
+                else:
+                    # if not, add it back to its original community
+                    community_sum[current_community] += k_i
         return partition
 
     def aggregate_graph(self, graph, partition):
@@ -133,7 +125,7 @@ class Graph:
             # phase 1: local moving of nodes
             partition = self.move_nodes(current_graph, partition)
             # check if the partition is bad
-            if(len(set(partition.values())) == len(current_graph)):
+            if len(set(partition.values())) == len(current_graph):
                 break
             # phase 2: aggregate graph
             current_graph = self.aggregate_graph(current_graph, partition)
@@ -183,7 +175,7 @@ if __name__ == "__main__":
     np.random.seed(42)
     
     # Generate normal data
-    normal_count = 1000000
+    normal_count = 1000
     normal_data = np.random.normal(0, 1, size=(normal_count, 4))
     
     # Generate anomalies
@@ -195,13 +187,17 @@ if __name__ == "__main__":
     true_labels = np.hstack([np.zeros(normal_count), np.ones(sketchy_count)])
     
     # Sample a subset cuz it's too large
+    """
     sample_size = 300
     indices = np.random.choice(len(all_transactions), size=sample_size, replace=False)
     sample_data = all_transactions[indices]
-    sample_true_labels = true_labels[indices]
+    sample_true_labels = true_labels[indices]"
+    """
+    sample_data = all_transactions
+    sample_true_labels = true_labels
     
     # build similarity graph
-    threshold = 4.0
+    threshold = 2.0
     similarity_graph = build_similarity_graph(sample_data, threshold)
     print_graph_stats(similarity_graph)
     
@@ -219,8 +215,8 @@ if __name__ == "__main__":
     
     # Calculate metrics
     print("\nDetected Communities and Fraud Counts:")
-    for comm, nodes in communities.items():
+    for community, nodes in communities.items():
         total = len(nodes)
         fraud_count = sum(sample_true_labels[node] for node in nodes)
         normal_count = total - fraud_count
-        print(f"Community {comm}: Total nodes = {total}, Normal = {normal_count}, Fraudulent = {fraud_count}")
+        print(f"Community {community}: Total nodes = {total}, Normal = {normal_count}, Fraudulent = {fraud_count}")

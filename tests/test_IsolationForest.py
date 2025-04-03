@@ -146,7 +146,7 @@ if __name__ == "__main__":
     np.random.seed(42)
     
     # Generate normal data
-    normal_count = 1000000
+    normal_count = 100000
     normal_data = np.random.normal(0, 1, size=(normal_count, 4))
     
     # Generate anomalies
