@@ -1,3 +1,5 @@
+import os
+import pandas as pd
 import numpy as np
 import random
 import math
@@ -17,7 +19,7 @@ class CustomRandomTree:
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.feature_subset_size = feature_subset_size
-        
+
         # stores the feature and threshold used for splitting
         self.split_feature_index = None
         self.split_value = None
@@ -28,22 +30,21 @@ class CustomRandomTree:
         # stores the majority vote at the node
         self.prediction = None
 
-
     def fit(self, X, labels, depth=0):
         '''
         X: feature matrix
         labels: their corresponding class labels
         '''
         num_samples, num_features = X.shape
-        
+
         # stores the majority class at current node
         self.prediction = majority_vote(labels)
-        
+
         # base case: 1. maximum depth is reached, OR 2. too few samples, OR 3. if all labels are the same
         if (depth >= self.max_depth) or (num_samples < self.min_samples_split) or (len(np.unique(labels)) == 1):
             self.is_leaf = True
             return
-        
+
         # selects a subset of features at random
         available_indices = list(range(num_features))
         num_to_select = min(self.feature_subset_size, num_features)
@@ -71,27 +72,27 @@ class CustomRandomTree:
                 if np.sum(left_mask) == 0 or np.sum(right_mask) == 0:
                     continue
 
-                gini = self.weighted_gini(labels[left_mask], labels[right_mask])
+                gini_val = self.weighted_gini(labels[left_mask], labels[right_mask])
                 # pretty self-explanatory
-                if gini < best_gini:
-                    best_gini = gini
+                if gini_val < best_gini:
+                    best_gini = gini_val
                     best_split = (feature, threshold)
-        
+
         # if no valid split is found, then it is a leaf
         if best_split is None:
             self.is_leaf = True
             return
-        
+
         self.split_feature_index, self.split_value = best_split
-        
+
         # recursive step
         # splits the data to recursively build its left and right branches
         left_mask = X[:, self.split_feature_index] < self.split_value
         right_mask = ~left_mask
-        
+
         self.left_child = CustomRandomTree(self.max_depth, self.min_samples_split, self.feature_subset_size)
         self.left_child.fit(X[left_mask], labels[left_mask], depth + 1)
-        
+
         self.right_child = CustomRandomTree(self.max_depth, self.min_samples_split, self.feature_subset_size)
         self.right_child.fit(X[right_mask], labels[right_mask], depth + 1)
 
@@ -141,7 +142,7 @@ class CustomRandomForest:
         """
         self.n_trees = n_trees
         # bootstrap sample size for each tree
-        self.sample_size = sample_size  
+        self.sample_size = sample_size
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.feature_subset_size = feature_subset_size
@@ -149,14 +150,14 @@ class CustomRandomForest:
 
     def fit(self, X, labels):
         num_samples, num_features = X.shape
-        
+
         # uses full dataset if sample_size is not specified
         if self.sample_size is None:
             self.sample_size = num_samples
         # uses the square root heuristic for feature subset size if not specified
         if self.feature_subset_size is None:
             self.feature_subset_size = int(math.sqrt(num_features))
-        
+
         self.trees = []
         # for each tree, a boostrap sample is created from the dataset
         # and a tree is trained on it and then added to the forest
@@ -165,7 +166,7 @@ class CustomRandomForest:
             indices = np.random.choice(num_samples, self.sample_size, replace=True)
             X_sample = X[indices]
             labels_sample = labels[indices]
-            
+
             tree = CustomRandomTree(self.max_depth, self.min_samples_split, self.feature_subset_size)
             tree.fit(X_sample, labels_sample)
             self.trees.append(tree)
@@ -180,54 +181,55 @@ class CustomRandomForest:
             predictions.append(majority_vote(np.array(tree_preds)))
         return np.array(predictions)
 
-# Demo Code
+def load_data(csv_file_path):
+    if not os.path.exists(csv_file_path):
+        raise FileNotFoundError(f"CSV file '{csv_file_path}' not found")
+    
+    df = pd.read_csv(csv_file_path)
+    
+    # separates is_fraud from the features
+    y = df['is_fraud'].values
+    x = df.drop(columns=['is_fraud']).values
+    
+    return x, y
+
 def main():
-    # Set random seed for reproducibility
     np.random.seed(42)
     random.seed(42)
-    
-    # Generate normal data (non-fraud transactions)
-    normal_count = 100000
-    normal_data = np.random.normal(0, 1, size=(normal_count, 4))
-    
-    # Generate anomalies (fraudulent transactions)
-    sketchy_count = 1000
-    sketchy_data = np.random.normal(5, 2, size=(sketchy_count, 4))
-    
-    # Combine datasets
-    X = np.vstack([normal_data, sketchy_data])
-    labels = np.hstack([np.zeros(normal_count), np.ones(sketchy_count)])
-    
-    # Shuffle the dataset.
-    indices = np.random.permutation(len(X))
-    X = X[indices]
-    labels = labels[indices]
-    
-    # Split into training and testing sets (70% training, 30% testing).
-    split = int(0.7 * len(X))
-    X_train, X_test = X[:split], X[split:]
-    labels_train, labels_test = labels[:split], labels[split:]
-    
-    # Build and train the random forest.
+
+    csv_file_path = 'data/100kDataPoints.csv'  # Update this path if necessary.
+
+    x, y = load_data(csv_file_path)
+
+    # shuffles and splits into training (70%) and testing (30%) sets
+    num_samples = x.shape[0]
+    indices = np.random.permutation(num_samples)
+    split_idx = int(0.7 * num_samples)
+    train_indices = indices[:split_idx]
+    test_indices = indices[split_idx:]
+
+    x_train, y_train = x[train_indices], y[train_indices]
+    x_test, y_test = x[test_indices], y[test_indices]
+
+    # trains the custom random forest
     rf = CustomRandomForest(n_trees=100, max_depth=10, min_samples_split=2)
-    rf.fit(X_train, labels_train)
-    
-    # Make predictions and compute accuracy.
-    predictions = rf.predict(X_test)
-    
-    # Calculate statistics
-    accuracy = np.mean(predictions == labels_test)
-    
-    true_pos = np.sum((predictions == 1) & (labels_test == 1))
-    false_pos = np.sum((predictions == 1) & (labels_test == 0))
-    false_neg = np.sum((predictions == 0) & (labels_test == 1))
-    true_neg = np.sum((predictions == 0) & (labels_test == 0))
-    
+    rf.fit(x_train, y_train)
+
+    # makes predictions on the test set
+    predictions = rf.predict(x_test)
+
+    # computes evaluation metrics
+    accuracy = np.mean(predictions == y_test)
+    true_pos = np.sum((predictions == 1) & (y_test == 1))
+    false_pos = np.sum((predictions == 1) & (y_test == 0))
+    false_neg = np.sum((predictions == 0) & (y_test == 1))
+    true_neg = np.sum((predictions == 0) & (y_test == 0))
+
     precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
     recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
 
-    # Print the computed statistics
+    # prints statistics
     print("Random Forest Accuracy: {:.2f}".format(accuracy))
     print("Precision: {:.2f}".format(precision))
     print("Recall: {:.2f}".format(recall))
