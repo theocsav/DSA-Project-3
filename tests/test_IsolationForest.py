@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import os
 import random
 import math
 
@@ -139,44 +141,48 @@ class CustomIsolationForest:
             return 1.0
         return 2 * (math.log(size - 1) + 0.5772156649) - (2 * (size - 1) / size)
 
+def load_data(csv_file_path):
+    if not os.path.exists(csv_file_path):
+        raise FileNotFoundError(f"CSV file '{csv_file_path}' not found")
+    
+    df = pd.read_csv(csv_file_path)
+
+    if 'is_fraud' in df.columns:
+        y = df['is_fraud'].values
+        x = df.drop(columns=['is_fraud']).values
+    else:
+        x = df.values
+        y = None
+
+    return x, y
 
 # Demo code
-if __name__ == "__main__":
+def main():
     # Set random seed
     np.random.seed(42)
+    random.seed(42)
+
+    csv_file_path = 'data/100kDataPoints.csv'
+
+    x, y = load_data(csv_file_path)
     
-    # Generate normal data
-    normal_count = 100000
-    normal_data = np.random.normal(0, 1, size=(normal_count, 4))
-    
-    # Generate anomalies
-    sketchy_count = 1000
-    sketchy_data = np.random.normal(5, 2, size=(sketchy_count, 4))
-    
-    # Combine datasets
-    all_transactions = np.vstack([normal_data, sketchy_data])
-    true_labels = np.hstack([np.zeros(normal_count), np.ones(sketchy_count)])
-    
-    # Create and train forest
     fraud_detector = CustomIsolationForest(tree_count=120, sample_size=256)
-    fraud_detector.plant_forest(all_transactions)
-    
-    # Make predictions
-    predictions = fraud_detector.detect_anomalies(all_transactions, threshold=0.55)
-    
+    fraud_detector.plant_forest(x)
+
+    predictions = fraud_detector.detect_anomalies(x, threshold=0.55)    
+   
     # Calculate metrics
-    accuracy = np.mean(predictions == true_labels)
-    print(f"Accuracy: {accuracy:.2f}")
-    
-    true_pos = np.sum((predictions == 1) & (true_labels == 1))
-    false_pos = np.sum((predictions == 1) & (true_labels == 0))
-    false_neg = np.sum((predictions == 0) & (true_labels == 1))
-    true_neg = np.sum((predictions == 0) & (true_labels == 0))
-    
+    accuracy = np.mean(predictions == y)
+    true_pos = np.sum((predictions == 1) & (y == 1))
+    false_pos = np.sum((predictions == 1) & (y == 0))
+    false_neg = np.sum((predictions == 0) & (y == 1))
+    true_neg = np.sum((predictions == 0) & (y == 0))
+
     precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
     recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
-    
+
+    print(f"Isolation Forest Accuracy: {accuracy:.2f}")
     print(f"Precision: {precision:.2f}")
     print(f"Recall: {recall:.2f}")
     print(f"F1 Score: {f1:.2f}")
@@ -185,3 +191,6 @@ if __name__ == "__main__":
     print(f"False Positives: {false_pos}")
     print(f"False Negatives: {false_neg}")
     print(f"True Negatives: {true_neg}")
+
+if __name__ == "__main__":
+    main()
