@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'transactions', # For the database
+    'isolation_forest', # For isolution Forest
+    'louvain_method', # For louvain method
     'corsheaders',  # For frontend 
 ]
 

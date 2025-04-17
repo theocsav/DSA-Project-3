@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
-import os
 import random
 import math
+import time
+from transactions.models import Transaction
 
 class FraudTree:
     def __init__(self, max_depth):
@@ -141,56 +142,82 @@ class IsolationForest:
             return 1.0
         return 2 * (math.log(size - 1) + 0.5772156649) - (2 * (size - 1) / size)
 
-def load_data(csv_file_path):
-    if not os.path.exists(csv_file_path):
-        raise FileNotFoundError(f"CSV file '{csv_file_path}' not found")
+
+class IsolationForestAnalyzer:
+    @staticmethod
+    def prepare_data():
+        """Fetch transaction data from database and prepare for analysis"""
+        # Get transaction data from Django models
+        transactions = Transaction.objects.all().values()
+        df = pd.DataFrame(list(transactions))
+        
+        # Select features for the model
+        features = df[['amt', 'distance_km', 'age', 'trans_hour']]
+        
+        # Target variable
+        labels = df['is_fraud'].values
+        
+        return features.values, labels
     
-    df = pd.read_csv(csv_file_path)
-
-    if 'is_fraud' in df.columns:
-        y = df['is_fraud'].values
-        x = df.drop(columns=['is_fraud']).values
-    else:
-        x = df.values
-        y = None
-
-    return x, y
-
-# Demo code
-def main():
-    # Set random seed
-    np.random.seed(42)
-    random.seed(42)
-
-    csv_file_path = 'data/100kDataPoints.csv'
-
-    x, y = load_data(csv_file_path)
-    
-    fraud_detector = IsolationForest(tree_count=120, sample_size=256)
-    fraud_detector.plant_forest(x)
-
-    predictions = fraud_detector.detect_anomalies(x, threshold=0.55)    
-   
-    # Calculate metrics
-    accuracy = np.mean(predictions == y)
-    true_pos = np.sum((predictions == 1) & (y == 1))
-    false_pos = np.sum((predictions == 1) & (y == 0))
-    false_neg = np.sum((predictions == 0) & (y == 1))
-    true_neg = np.sum((predictions == 0) & (y == 0))
-
-    precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
-    recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
-
-    print(f"Isolation Forest Accuracy: {accuracy:.2f}")
-    print(f"Precision: {precision:.2f}")
-    print(f"Recall: {recall:.2f}")
-    print(f"F1 Score: {f1:.2f}")
-    print("\nConfusion Matrix:")
-    print(f"True Positives: {true_pos}")
-    print(f"False Positives: {false_pos}")
-    print(f"False Negatives: {false_neg}")
-    print(f"True Negatives: {true_neg}")
-
-if __name__ == "__main__":
-    main()
+    @staticmethod
+    def run_analysis(tree_count=120, sample_size=256, threshold=0.55):
+        """
+        Run the Isolation Forest algorithm on database data.
+        Returns metrics and execution details.
+        """
+        # Set random seed for reproducibility
+        np.random.seed(42)
+        random.seed(42)
+        
+        start_time = time.time()
+        
+        # Prepare data
+        features, true_labels = IsolationForestAnalyzer.prepare_data()
+        
+        # Initialize and train model
+        model = IsolationForest(
+            tree_count=tree_count,
+            sample_size=sample_size
+        )
+        
+        # Train the model (plant forest)
+        model.plant_forest(features)
+        
+        # Get predictions
+        predictions = model.detect_anomalies(features, threshold=threshold)
+        
+        # Calculate metrics
+        true_pos = np.sum((predictions == 1) & (true_labels == 1))
+        false_pos = np.sum((predictions == 1) & (true_labels == 0))
+        false_neg = np.sum((predictions == 0) & (true_labels == 1))
+        true_neg = np.sum((predictions == 0) & (true_labels == 0))
+        
+        accuracy = (true_pos + true_neg) / len(true_labels)
+        precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
+        recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+        
+        execution_time = time.time() - start_time
+        
+        # Return results
+        return {
+            'execution_time': execution_time,
+            'accuracy': round(accuracy, 2),
+            'precision': round(precision, 2),
+            'recall': round(recall, 2),
+            'f1_score': round(f1, 2),
+            'confusion_matrix': {
+                'true_positives': int(true_pos),
+                'false_positives': int(false_pos),
+                'false_negatives': int(false_neg),
+                'true_negatives': int(true_neg)
+            },
+            'data_points': len(features),
+            'algorithm': 'custom_isolation_forest',
+            'data_structure': 'binary_trees',
+            'parameters': {
+                'tree_count': tree_count,
+                'sample_size': sample_size,
+                'threshold': threshold
+            }
+        }
