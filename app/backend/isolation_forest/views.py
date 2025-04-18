@@ -11,9 +11,9 @@ def analyze(request):
     - threshold: Anomaly score threshold
     """
     # Get parameters from request
-    tree_count = int(request.GET.get('trees', 120))
-    sample_size = int(request.GET.get('sample_size', 256))
-    threshold = float(request.GET.get('threshold', 0.55))
+    tree_count = int(request.GET.get('trees', 50))
+    sample_size = int(request.GET.get('sample_size', 512))
+    threshold = float(request.GET.get('threshold', 0.56))
     
     # Run analysis
     results = IsolationForestAnalyzer.run_analysis(

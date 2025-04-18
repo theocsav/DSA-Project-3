@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'transactions', # For the database
     'isolation_forest', # For isolution Forest
-    'louvain_method', # For louvain method
+    'random_forest', # For random forest
     'corsheaders',  # For frontend 
 ]
 
