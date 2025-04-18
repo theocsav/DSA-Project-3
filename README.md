@@ -39,3 +39,8 @@ DSA-Project-3/
 ├── requirements.txt            
 └── README.md                     
 ```
+## Frontend + Backend
+```
+You will need to open two terminal and run the frontend and backend command. So both are running at the same time.
+If you in vs code you can click the + and do split Terminal
+```
