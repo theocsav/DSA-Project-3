@@ -185,6 +185,9 @@ class IsolationForestAnalyzer:
         
         # Get predictions
         predictions = model.detect_anomalies(features, threshold=threshold)
+
+        # Get scores
+        scores = model.get_all_scores(features)
         
         # Calculate metrics
         true_pos = np.sum((predictions == 1) & (true_labels == 1))
@@ -213,6 +216,9 @@ class IsolationForestAnalyzer:
                 'true_negatives': int(true_neg)
             },
             'data_points': len(features),
+            'features': features.tolist(),
+            'scores': scores.tolist(),
+            'predictions': predictions.tolist(),
             'algorithm': 'custom_isolation_forest',
             'data_structure': 'binary_trees',
             'parameters': {

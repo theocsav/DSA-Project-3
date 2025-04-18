@@ -182,6 +182,9 @@ class RandomForestAnalyzer:
         
         # Get predictions
         predictions = model.predict(features)
+
+        # Get scores
+        scores = model.predict(features)
         
         # Calculate metrics
         true_pos = np.sum((predictions == 1) & (true_labels == 1))
@@ -210,6 +213,9 @@ class RandomForestAnalyzer:
                 'true_negatives': int(true_neg)
             },
             'data_points': len(features),
+            'features': features.tolist(),
+            'scores': scores.tolist(),
+            'predictions': predictions.tolist(),
             'algorithm': 'custom_random_forest',
             'data_structure': 'binary_trees',
             'parameters': {
