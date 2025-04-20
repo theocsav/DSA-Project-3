@@ -1,20 +1,12 @@
 import numpy as np
 import pandas as pd
 import random
+from django.http import HttpResponse
 import math
 import time
 import os
 from transactions.models import Transaction
 
-def export_to_csv(file_path):
-
-    transactions = Transaction.objects.all().values()
-    df = pd.DataFrame(list(transactions))
-
-    first_100 = df.head(100)
-    
-    first_100.to_csv(file_path, index=False) """dont include index column in export"""
-    print(f"100 points exported to: {os.path.abspath(file_path)}") """prints the absolute path so user knows wher it is at"""
 
 
 class FraudTree:

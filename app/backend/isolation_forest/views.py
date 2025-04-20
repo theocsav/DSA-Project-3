@@ -1,5 +1,25 @@
 from django.http import JsonResponse
 from .algorithm import IsolationForestAnalyzer
+import os
+from transactions.models import Transaction
+from django.http import HttpResponse
+import pandas as pd
+
+
+
+def export_to_csv(request):
+
+    transactions = Transaction.objects.all().values()
+    df = pd.DataFrame(list(transactions))
+
+    first_100 = df.head(100)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'inline; filename="iso_100_transactions.csv"'
+    
+    first_100.to_csv(response, index=False) #dont include index column in export
+    # print(f"100 points exported to: {os.path.abspath(file_path)}") #prints the absolute path so user knows wher it is at
+    return response
+
 
 def analyze(request):
     """
