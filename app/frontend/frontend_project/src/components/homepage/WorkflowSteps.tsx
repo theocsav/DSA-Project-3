@@ -13,7 +13,7 @@ const WorkflowSteps: React.FC = () => {
   return (
     <Grid container spacing={3}>
       {steps.map(item => (
-        <Grid item xs={12} md={3} key={item.step}>
+        <Grid key={item.step}>
           <Paper sx={{ 
             p: 3, 
             height: '100%', 

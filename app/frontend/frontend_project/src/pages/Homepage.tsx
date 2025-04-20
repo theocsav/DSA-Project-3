@@ -223,7 +223,7 @@ function HomePage() {
           </Typography>
           <Grid container spacing={4} justifyContent="center">
             {teamMembers.map(member => (
-              <Grid item xs={12} sm={6} md={4} key={member.name}>
+              <Grid key={member.name}>
                 <TeamMemberCard {...member} />
               </Grid>
             ))}

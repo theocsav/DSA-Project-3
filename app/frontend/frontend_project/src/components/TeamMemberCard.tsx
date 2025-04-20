@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Paper, Typography, Avatar, IconButton } from '@mui/material';
+import { SxProps, Theme } from '@mui/material/styles';
 import { commonStyles } from '../styles/common';
 
 export interface TeamMember {
@@ -61,7 +62,7 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({
             boxShadow: '0 12px 20px rgba(0, 0, 0, 0.3)',
             border: '1px solid rgba(33, 150, 243, 0.3)',
           }
-        }}
+        } as SxProps<Theme>}
       >
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Avatar sx={{ 
