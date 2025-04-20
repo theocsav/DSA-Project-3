@@ -4,6 +4,7 @@ import numpy as np
 import random
 import math
 import time
+import pickle
 from transactions.models import Transaction
 
 def majority_vote(labels):
@@ -139,6 +140,10 @@ class CustomRandomForest:
         return np.array(predictions)
 
 class RandomForestAnalyzer:
+    # Define the path to save/load the model
+    MODEL_DIR = os.path.dirname(os.path.abspath(__file__))
+    MODEL_PATH = os.path.join(MODEL_DIR, 'trained_random_forest.pkl')
+    
     @staticmethod
     def prepare_data():
         """Fetch transaction data from database and prepare for analysis"""
@@ -158,7 +163,7 @@ class RandomForestAnalyzer:
     def run_analysis(n_trees=100, max_depth=10, min_samples_split=2, feature_subset_size=None):
         """
         Run the Random Forest algorithm on database data.
-        Returns metrics and execution details.
+        Saves the trained model to disk and returns metrics and execution details.
         """
         # Set random seed for reproducibility
         np.random.seed(42)
@@ -180,6 +185,14 @@ class RandomForestAnalyzer:
         # Train the model
         model.fit(features, true_labels)
         
+        # Save the trained model to disk
+        try:
+            with open(RandomForestAnalyzer.MODEL_PATH, 'wb') as f:
+                pickle.dump(model, f)
+            model_save_status = f"Model saved successfully to {RandomForestAnalyzer.MODEL_PATH}"
+        except Exception as e:
+            model_save_status = f"Error saving model: {e}"
+        
         # Get predictions
         predictions = model.predict(features)
 
@@ -199,7 +212,7 @@ class RandomForestAnalyzer:
         
         execution_time = time.time() - start_time
         
-        # Return results
+        # Return results with model save status
         return {
             'execution_time': execution_time,
             'accuracy': round(accuracy, 2),
@@ -223,5 +236,52 @@ class RandomForestAnalyzer:
                 'max_depth': max_depth,
                 'min_samples_split': min_samples_split,
                 'feature_subset_size': feature_subset_size
-            }
+            },
+            'model_save_status': model_save_status
         }
+    
+    @staticmethod
+    def predict_with_saved_model(input_features):
+        """
+        Use the saved model to make predictions on new data.
+        
+        Args:
+            input_features: List or array of feature values in format [amt, distance_km, age, trans_hour]
+                           Can be a single sample or multiple samples
+        
+        Returns:
+            Dict containing predictions and status
+        """
+        try:
+            # Check if the model file exists
+            if not os.path.exists(RandomForestAnalyzer.MODEL_PATH):
+                return {
+                    'status': 'error',
+                    'message': f'Trained model not found at {RandomForestAnalyzer.MODEL_PATH}. Please train the model first.'
+                }
+            
+            # Load the model from disk
+            with open(RandomForestAnalyzer.MODEL_PATH, 'rb') as f:
+                model = pickle.load(f)
+            
+            # Convert input to numpy array
+            input_array = np.array(input_features)
+            
+            # Handle single sample vs multiple samples
+            if input_array.ndim == 1:
+                input_array = input_array.reshape(1, -1)
+            
+            # Make predictions
+            predictions = model.predict(input_array)
+            
+            return {
+                'status': 'success',
+                'predictions': predictions.tolist(),
+                'model_used': RandomForestAnalyzer.MODEL_PATH
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'Error making predictions: {str(e)}'
+            }
