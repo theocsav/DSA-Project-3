@@ -6,6 +6,14 @@ import math
 import time
 from transactions.models import Transaction
 
+
+def export_first_100(file_path):
+    trans= Transaction,objects.all().values[:100]
+    df= pd.DataFrame(list(transactions))
+    df.to_csv(file_path, index=False)
+    print(f"first 100 points exported to {os.abspath(file_path)}")
+
+
 def majority_vote(labels):
     unique_vals, counts = np.unique(labels, return_counts=True)
     return unique_vals[np.argmax(counts)]
