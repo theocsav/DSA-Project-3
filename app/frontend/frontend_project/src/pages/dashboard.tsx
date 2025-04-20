@@ -254,19 +254,31 @@ export default function Dashboard() {
           }}
         >
           {/* App Title */}
-          <Toolbar sx={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
+          <Toolbar sx={{ display: 'flex', justifyContent: 'center', padding: '20px 0', flexDirection: 'column' }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                fontWeight: 400,
+                fontSize: '0.7rem',
+                letterSpacing: '0.3em',
+                color: '#2196F3',
+                textTransform: 'uppercase',
+                mb: -0.5,
+              }}
+            >
+              INTELLIGENT
+            </Typography>
             <Typography 
               variant="h6" 
               sx={{ 
                 fontFamily: "'Caveat', cursive",
                 fontWeight: 700,
-                fontSize: '1.8rem',
+                fontSize: '1.6rem',
                 letterSpacing: 1,
                 color: '#fff',
                 textShadow: '0 2px 4px rgba(0,0,0,0.2)',
                 transform: 'rotate(-1deg)',
                 animation: 'writing 1.5s ease-in-out',
-                marginBottom: '4px',
                 position: 'relative',
                 '&::after': {
                   content: '""',
@@ -280,7 +292,7 @@ export default function Dashboard() {
                 }
               }}
             >
-              Fraud Detector
+              Fraud Detection
             </Typography>
           </Toolbar>
           

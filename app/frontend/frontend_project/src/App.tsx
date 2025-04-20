@@ -1,13 +1,11 @@
 import { Routes, Route } from 'react-router-dom'
 import Homepage from './pages/Homepage' 
-import NextPage from './pages/NextPage'
 import Dashboard from './pages/dashboard'
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Homepage />} />
-      <Route path="/next" element={<NextPage />} />
       <Route path="/dashboard" element={<Dashboard />} />
     </Routes>
   )
