@@ -21,5 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/transactions/', include('transactions.urls')),
     path('api/isolation-forest/', include('isolation_forest.urls')),
-    path('api/random_forest/', include('random_forest.urls')),
+    # changed it to random-forest for consistency
+    path('api/random-forest/', include('random_forest.urls')),
 ]

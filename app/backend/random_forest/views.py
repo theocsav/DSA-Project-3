@@ -20,3 +20,13 @@ def random_forest_analyze(request):
     
     # Return results as JSON
     return JsonResponse(results)
+
+def random_forest_predict(request):
+    """
+    API endpoint to run Random Forest prediction on all training data
+    """
+    # Run the prediction on the entire training dataset
+    results = RandomForestAnalyzer.predict_with_saved_model('training_data')
+    
+    # Return results as JSON
+    return JsonResponse(results)
