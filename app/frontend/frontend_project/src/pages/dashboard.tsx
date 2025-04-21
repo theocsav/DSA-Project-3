@@ -12,8 +12,28 @@ import TeamDialog from '../components/dashboard/TeamDialog';
 import { TeamMember } from '../components/TeamMemberCard';
 import { commonStyles, animations } from '../styles/common';
 
+import {
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  ZAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+} from 'recharts';
+
+
 // Constants
 const drawerWidth = 240;
+
+const scatterData = [
+  { x: 10, y: 30 },
+  { x: 20, y: 40 },
+  { x: 30, y: 20 },
+  { x: 40, y: 60 },
+  { x: 50, y: 50 },
+];
 
 // Main Dashboard component
 export default function Dashboard() {
@@ -224,6 +244,7 @@ export default function Dashboard() {
               
               {/* Graph Box 2 */}
               <Paper 
+              
                 elevation={3} 
                 sx={{
                   flex: 1,
@@ -253,7 +274,21 @@ export default function Dashboard() {
                   justifyContent: 'center',
                   color: 'rgba(255, 255, 255, 0.7)'
                 }}>
-                  [Scatter plot will appear here]
+                <ScatterChart
+                  width={400}
+                  height={400}
+                  margin={{ top: 20, right: 20, bottom: 10, left: 10 }}
+                >
+                  <CartesianGrid />
+                    <XAxis type="number" dataKey="x" name="X Value" />
+                    <YAxis type="number" dataKey="y" name="Y Value" />
+                    <ZAxis range={[60]} />
+                    <RechartsTooltip cursor={{ strokeDasharray: '3 3' }} />
+                    <Legend />
+                    <Scatter name="IsolationForest" data={scatterData} fill="#8884d8" />
+                </ScatterChart>  
+                  
+                
                 </Box>
               </Paper>
             </Box>
