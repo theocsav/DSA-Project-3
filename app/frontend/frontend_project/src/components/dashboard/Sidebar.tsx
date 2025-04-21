@@ -19,6 +19,7 @@ import UploadIcon from '@mui/icons-material/Upload';
 import { commonStyles } from '../../styles/common';
 
 interface SidebarProps {
+  onRunModel?: () => void;
   drawerWidth: number;
   selectedModel: string;
   onModelSelect: (model: string) => void;
