@@ -126,7 +126,7 @@ export default function Dashboard() {
           <Box 
             sx={{
               position: 'absolute',
-              top: 16,
+              top: 18,
               left: 24,
               display: 'flex',
               gap: 2,
@@ -204,7 +204,7 @@ export default function Dashboard() {
                   transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                   '&:hover': {
                     transform: 'translateY(-5px)',
-                    boxShadow: '0 12px 40px rgba(33, 150, 243, 0.3)',
+                    boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)', // Consistent blue glow
                   }
                 }}
               >
@@ -239,7 +239,7 @@ export default function Dashboard() {
                   transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                   '&:hover': {
                     transform: 'translateY(-5px)',
-                    boxShadow: '0 12px 40px rgba(0, 230, 118, 0.3)',
+                    boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)', // Consistent blue glow
                   }
                 }}
               >
@@ -275,7 +275,7 @@ export default function Dashboard() {
                 transition: 'box-shadow 0.2s ease-in-out',
                 overflow: 'hidden',
                 '&:hover': {
-                  boxShadow: '0 12px 40px rgba(33, 150, 243, 0.2)',
+                  boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)', // Consistent blue glow
                 }
               }}
             >
@@ -320,7 +320,7 @@ export default function Dashboard() {
           <Box
             sx={{
               position: 'absolute', // Changed from fixed to absolute for consistency
-              top: 16,
+              top: 18,
               right: 20, // Consistent with left margin of stats
               display: 'flex',
               gap: 2,
