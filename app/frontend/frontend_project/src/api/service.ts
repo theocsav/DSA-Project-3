@@ -1,8 +1,12 @@
 import { getApiBase } from './constants';
+import { 
+  TransactionStats, 
+  AnalysisResult,
+  IsolationForestParams,
+  RandomForestParams
+} from './types';
 
-//Still needs to be tested However this should stop the backend and the api from showing in inspect element
-
-// construct endpoints to make them harder to extract
+// Construct endpoints to make them harder to extract
 const getEndpoints = () => {
   const base = getApiBase();
   const paths = {
@@ -18,33 +22,50 @@ const getEndpoints = () => {
   };
 };
 
-// build the URLs only when called
+// Handle API response errors
+const handleResponse = async <T>(response: Response): Promise<T> => {
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(error || `API error: ${response.status} ${response.statusText}`);
+  }
+  return response.json() as Promise<T>;
+};
+
+// API service with typed methods
 export const apiService = {
-  fetchTransactionStats: async () => {
+  // Fetch transaction statistics
+  fetchTransactionStats: async (): Promise<TransactionStats> => {
     const response = await fetch(getEndpoints().getStats());
-    if (!response.ok) throw new Error('Failed to fetch stats');
-    return response.json();
+    return handleResponse<TransactionStats>(response);
   },
   
-  runIsolationForest: async (params: Record<string, number>) => {
+  // Run Isolation Forest analysis
+  runIsolationForest: async (params: IsolationForestParams): Promise<AnalysisResult> => {
     const url = new URL(getEndpoints().runIsolationForest());
+    
+    // Add parameters to query string
     Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value.toString());
+      if (value !== undefined) {
+        url.searchParams.append(key, value.toString());
+      }
     });
     
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Analysis failed');
-    return response.json();
+    const response = await fetch(url.toString());
+    return handleResponse<AnalysisResult>(response);
   },
   
-  runRandomForest: async (params: Record<string, number>) => {
+  // Run Random Forest analysis
+  runRandomForest: async (params: RandomForestParams): Promise<AnalysisResult> => {
     const url = new URL(getEndpoints().runRandomForest());
+    
+    // Add parameters to query string
     Object.entries(params).forEach(([key, value]) => {
-      url.searchParams.append(key, value.toString());
+      if (value !== undefined) {
+        url.searchParams.append(key, value.toString());
+      }
     });
     
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Analysis failed');
-    return response.json();
+    const response = await fetch(url.toString());
+    return handleResponse<AnalysisResult>(response);
   }
 };

@@ -1,7 +1,13 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from './service';
-import type { TransactionStats, AnalysisResult } from './types';
+import { 
+  TransactionStats, 
+  AnalysisResult, 
+  IsolationForestParams,
+  RandomForestParams 
+} from './types';
 
+// Hook to fetch transaction statistics
 export const useTransactionStats = () => {
   return useQuery<TransactionStats>({
     queryKey: ['transactionStats'],
@@ -11,14 +17,22 @@ export const useTransactionStats = () => {
   });
 };
 
+// Hook for Isolation Forest analysis
 export const useIsolationForestAnalysis = () => {
-  return useMutation<AnalysisResult, Error, Record<string, number>>({
-    mutationFn: apiService.runIsolationForest
+  return useMutation<AnalysisResult, Error, IsolationForestParams>({
+    mutationFn: apiService.runIsolationForest,
+    onError: (error) => {
+      console.error('Isolation Forest analysis failed:', error);
+    }
   });
 };
 
+// Hook for Random Forest analysis
 export const useRandomForestAnalysis = () => {
-  return useMutation<AnalysisResult, Error, Record<string, number>>({
-    mutationFn: apiService.runRandomForest
+  return useMutation<AnalysisResult, Error, RandomForestParams>({
+    mutationFn: apiService.runRandomForest,
+    onError: (error) => {
+      console.error('Random Forest analysis failed:', error);
+    }
   });
 };

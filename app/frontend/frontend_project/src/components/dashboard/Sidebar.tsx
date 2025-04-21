@@ -19,18 +19,19 @@ import UploadIcon from '@mui/icons-material/Upload';
 import { commonStyles } from '../../styles/common';
 
 interface SidebarProps {
-  onRunModel?: () => void;
   drawerWidth: number;
   selectedModel: string;
   onModelSelect: (model: string) => void;
   onSettingsClick: () => void;
+  onRunModel?: () => void; // Added prop for run model action
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   drawerWidth,
   selectedModel,
   onModelSelect,
-  onSettingsClick
+  onSettingsClick,
+  onRunModel
 }) => {
   return (
     <Drawer
@@ -97,6 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <ListItem disablePadding>
           <ListItemButton 
             aria-label="Run"
+            onClick={onRunModel} // Use the new onRunModel prop
             sx={{
               background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
               borderRadius: '8px',

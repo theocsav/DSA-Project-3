@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Box, CssBaseline, GlobalStyles, IconButton, Tooltip, Typography, Paper } from '@mui/material';
 
 // Material UI Icons
@@ -11,6 +11,10 @@ import ModelSettingsDialog from '../components/dashboard/ModelSettingsDialog';
 import TeamDialog from '../components/dashboard/TeamDialog';
 import { TeamMember } from '../components/TeamMemberCard';
 import { commonStyles, animations } from '../styles/common';
+
+// Visualization components
+import IsolationForestTree from '../components/visualization/IsolationForestTree';
+import RandomForestTree from '../components/visualization/RandomForestTree';
 
 // Constants
 const drawerWidth = 240;
@@ -27,14 +31,19 @@ export default function Dashboard() {
   });
   const [selectedModel, setSelectedModel] = useState('Random Forest');
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
   // Stats for the status bar
-  const stats = {
+  const [stats, setStats] = useState({
     fraudPercentage: '7%',
     analyzedCount: '100,000',
     accuracy: '98%',
     time: '10s',
-  };
+  });
+
+  // Refs for visualization components
+  const isolationForestRef = useRef<HTMLDivElement>(null);
+  const randomForestRef = useRef<HTMLDivElement>(null);
 
   // Event handlers
   interface Thresholds {
@@ -46,6 +55,26 @@ export default function Dashboard() {
 
   const handleThresholdsChange = (field: keyof Thresholds, value: number) => {
     setThresholds((prev: Thresholds) => ({ ...prev, [field]: value }));
+  };
+
+  // Handle run model click
+  const handleRunModel = () => {
+    setIsRunning(true);
+  };
+
+  // Handle model completion
+  const handleModelComplete = (modelResults: any) => {
+    setIsRunning(false);
+    
+    // Update stats from model results
+    if (modelResults) {
+      setStats({
+        fraudPercentage: `${Math.round(modelResults.fraud_percentage || 7)}%`,
+        analyzedCount: `${modelResults.data_points?.toLocaleString() || '100,000'}`,
+        accuracy: `${Math.round(modelResults.accuracy * 100)}%`,
+        time: `${modelResults.execution_time.toFixed(1)}s`,
+      });
+    }
   };
 
   // Team members data
@@ -100,6 +129,7 @@ export default function Dashboard() {
           selectedModel={selectedModel}
           onModelSelect={setSelectedModel}
           onSettingsClick={() => setThresholdsOpen(true)}
+          onRunModel={handleRunModel}
         />
 
         {/* Main Content */}
@@ -111,11 +141,11 @@ export default function Dashboard() {
             background: 'transparent',
             position: 'absolute',
             top: 0,
-            left: drawerWidth,  // Consistent drawer width
+            left: drawerWidth,
             right: 0,
             bottom: 0,
             overflow: 'hidden',
-            width: `calc(100% - ${drawerWidth}px)`, // Fixed width calculation
+            width: `calc(100% - ${drawerWidth}px)`,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
@@ -131,8 +161,8 @@ export default function Dashboard() {
               display: 'flex',
               gap: 2,
               zIndex: 1100,
-              alignItems: 'center', // Add vertical alignment
-              height: 40, // Match the height of the action buttons
+              alignItems: 'center',
+              height: 40,
             }}
           >
             {[
@@ -149,7 +179,7 @@ export default function Dashboard() {
                   borderRadius: '20px',
                   px: 2,
                   py: 0.75,
-                  height: 40, // Set consistent height to match action buttons
+                  height: 40,
                   backgroundColor: stat.bgColor,
                   backdropFilter: 'blur(10px)',
                   border: `1px solid ${stat.color}30`,
@@ -175,8 +205,8 @@ export default function Dashboard() {
               width: '100%',
               height: '100%',
               maxHeight: '95vh',
-              mt: '60px', // Add top margin to account for the stats
-              mb: '10px', // Add bottom margin
+              mt: '60px',
+              mb: '10px',
             }}
           >
             {/* Two graphs side by side */}
@@ -187,7 +217,7 @@ export default function Dashboard() {
               width: '100%',
               height: '90%',
             }}>
-              {/* Graph Box 1 */}
+              {/* Visualization Box */}
               <Paper 
                 elevation={3} 
                 sx={{
@@ -204,8 +234,9 @@ export default function Dashboard() {
                   transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                   '&:hover': {
                     transform: 'translateY(-5px)',
-                    boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)', // Consistent blue glow
-                  }
+                    boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
+                  },
+                  overflow: 'hidden' // Ensure content doesn't overflow
                 }}
               >
                 <Typography variant="h5" sx={{ color: 'white', mb: 2, fontWeight: 500 }}>
@@ -216,12 +247,28 @@ export default function Dashboard() {
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
+                  position: 'relative',
                   color: 'rgba(255, 255, 255, 0.7)'
                 }}>
-                  [Tree visualization will appear here]
+                  {/* Conditionally render the appropriate visualization */}
+                  {selectedModel === 'Isolation Forest' ? (
+                    <IsolationForestTree 
+                      ref={isolationForestRef}
+                      thresholds={thresholds}
+                      autoStart={isRunning}
+                      onComplete={handleModelComplete}
+                    />
+                  ) : (
+                    <RandomForestTree 
+                      ref={randomForestRef}
+                      thresholds={thresholds}
+                      autoStart={isRunning}
+                      onComplete={handleModelComplete}
+                    />
+                  )}
                 </Box>
               </Paper>
-              
+
               {/* Graph Box 2 */}
               <Paper 
                 elevation={3} 
@@ -239,7 +286,7 @@ export default function Dashboard() {
                   transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                   '&:hover': {
                     transform: 'translateY(-5px)',
-                    boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)', // Consistent blue glow
+                    boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
                   }
                 }}
               >
@@ -253,7 +300,9 @@ export default function Dashboard() {
                   justifyContent: 'center',
                   color: 'rgba(255, 255, 255, 0.7)'
                 }}>
-                  [Scatter plot will appear here]
+                  <Typography>
+                    Scatter plot visualization will appear here
+                  </Typography>
                 </Box>
               </Paper>
             </Box>
@@ -267,7 +316,7 @@ export default function Dashboard() {
                 background: 'rgba(30, 30, 60, 0.8)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 p: 3,
-                height: '35%', // Keep at 35% to maintain proportion
+                height: '35%',
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
@@ -275,7 +324,7 @@ export default function Dashboard() {
                 transition: 'box-shadow 0.2s ease-in-out',
                 overflow: 'hidden',
                 '&:hover': {
-                  boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)', // Consistent blue glow
+                  boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
                 }
               }}
             >
@@ -302,7 +351,7 @@ export default function Dashboard() {
                 },
               }}>
                 <Typography variant="body2" component="div" sx={{ p: 1 }}>
-                  [Fraud transactions will appear here]
+                  Transaction details will appear here after analysis is complete
                 </Typography>
               </Box>
             </Paper>
@@ -319,14 +368,14 @@ export default function Dashboard() {
           {/* Header Action Icons */}
           <Box
             sx={{
-              position: 'absolute', // Changed from fixed to absolute for consistency
+              position: 'absolute',
               top: 18,
-              right: 20, // Consistent with left margin of stats
+              right: 20,
               display: 'flex',
               gap: 2,
               zIndex: 1100,
-              alignItems: 'center', // Add vertical alignment
-              height: 40, // Match height with stats pills
+              alignItems: 'center',
+              height: 40,
             }}
           >
             {[
@@ -344,7 +393,7 @@ export default function Dashboard() {
                   border: `1px solid ${action.color}30`,
                   boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
                   transition: 'transform 0.2s ease',
-                  height: 40, // Set consistent height
+                  height: 40,
                   '&:hover': {
                     transform: 'translateY(-2px)',
                     boxShadow: '0 6px 10px rgba(0, 0, 0, 0.15)',
