@@ -1,0 +1,325 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { Box, CircularProgress, Typography } from '@mui/material';
+import { Chart, ChartConfiguration, ChartData, ScatterDataPoint, registerables } from 'chart.js'; // Import necessary types
+
+// Register Chart.js components (controllers, elements, scales, plugins)
+Chart.register(...registerables);
+
+// --- Interfaces (Should match dashboard and API response) ---
+interface PlotPoint {
+  age: number;
+  distance_km: number;
+  is_fraud: boolean;
+  amt?: number;
+  trans_hour?: number;
+}
+
+interface RawTransaction {
+  age?: number | null;
+  distance_km?: number | null;
+  amt?: number | null;
+  trans_hour?: number | null;
+  is_fraud?: boolean | null;
+  [key: string]: any;
+}
+
+interface AnalysisResult {
+  fraud_transactions?: RawTransaction[];
+  non_fraud_transactions?: RawTransaction[];
+  all_transactions?: RawTransaction[];
+  // Add other fields if needed
+}
+
+interface ScatterPlotProps {
+  data: AnalysisResult | null;
+  loading: boolean;
+}
+
+type PlotStatus = 'loading' | 'ready' | 'no_data' | 'error' | 'initial';
+
+// --- Color Constants (From previous request) ---
+const normalColor = 'rgba(33, 150, 243, 0.7)'; // Blueish
+const normalBorderColor = 'rgba(33, 150, 243, 1)';
+const fraudColor = 'rgba(255, 99, 132, 0.7)'; // Reddish
+const fraudBorderColor = 'rgba(255, 99, 132, 1)';
+const textColor = 'rgba(255, 255, 255, 0.7)';
+const textEmphasisColor = 'rgba(255, 255, 255, 0.9)';
+const gridColor = 'rgba(255, 255, 255, 0.1)';
+const axisColor = 'rgba(255, 255, 255, 0.7)';
+const legendColor = 'rgba(255, 255, 255, 0.8)';
+const tooltipBgColor = 'rgba(30, 30, 60, 0.9)';
+const loadingSpinnerColor = '#2196F3'; // Blue
+
+const ScatterPlot: React.FC<ScatterPlotProps> = ({ data, loading }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartInstanceRef = useRef<Chart | null>(null); // Ref to store the chart instance
+  const [plotStatus, setPlotStatus] = useState<PlotStatus>('initial');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error("ScatterPlot (Chart.js): Canvas ref is not available.");
+      return; // Exit if the canvas element isn't ready
+    }
+
+    // --- Destroy previous chart instance if it exists ---
+    // This is crucial for preventing memory leaks and rendering issues on updates
+    if (chartInstanceRef.current) {
+      chartInstanceRef.current.destroy();
+      chartInstanceRef.current = null;
+      // console.log("ScatterPlot (Chart.js): Previous chart instance destroyed.");
+    }
+
+    setErrorMessage(null); // Reset error message
+
+    // --- Determine Status based on props ---
+    if (loading) {
+      setPlotStatus('loading');
+      return; // Don't process data or render chart if loading
+    }
+
+    if (!data) {
+      setPlotStatus('initial');
+      return; // No data to process
+    }
+
+    // --- Data Processing (Similar to Plotly version) ---
+    let processedPoints: PlotPoint[] = [];
+    try {
+        let combinedTransactions: (RawTransaction & { is_fraud: boolean })[] = [];
+
+        if (data.fraud_transactions || data.non_fraud_transactions) {
+            const frauds = (data.fraud_transactions || []).map((t): RawTransaction & { is_fraud: boolean } => ({ ...t, is_fraud: true }));
+            const nonFrauds = (data.non_fraud_transactions || []).map((t): RawTransaction & { is_fraud: boolean } => ({ ...t, is_fraud: false }));
+            combinedTransactions = [...frauds, ...nonFrauds];
+        } else if (data.all_transactions) {
+            combinedTransactions = data.all_transactions.map(t => ({ ...t, is_fraud: typeof t.is_fraud === 'boolean' ? t.is_fraud : false }));
+        } else if (data.fraud_transactions && data.fraud_transactions.length > 0) {
+            console.warn("ScatterPlot (Chart.js): Only fraud_transactions found. Plotting only fraud points.");
+            combinedTransactions = data.fraud_transactions.map(t => ({ ...t, is_fraud: true }));
+        }
+
+        processedPoints = combinedTransactions
+            .filter((t: RawTransaction): t is RawTransaction & { age: number; distance_km: number; is_fraud: boolean } =>
+                typeof t.age === 'number' && typeof t.distance_km === 'number' && typeof t.is_fraud === 'boolean'
+            )
+            .map((t): PlotPoint => ({
+                age: t.age,
+                distance_km: t.distance_km,
+                is_fraud: t.is_fraud,
+                amt: typeof t.amt === 'number' ? t.amt : undefined,
+                trans_hour: typeof t.trans_hour === 'number' ? t.trans_hour : undefined,
+            }));
+
+        if (processedPoints.length === 0) {
+            setPlotStatus('no_data');
+            setErrorMessage("No valid data points found for scatter plot (missing age, distance, or fraud status). Check API response structure.");
+            console.warn(errorMessage || "No valid data points found.");
+        } else {
+            setPlotStatus('ready');
+        }
+
+    } catch (error) {
+        setPlotStatus('error');
+        setErrorMessage("Error processing scatter plot data.");
+        console.error(errorMessage, error);
+        processedPoints = [];
+    }
+
+    // --- Chart Rendering (only if status is 'ready') ---
+    if (plotStatus === 'ready' && processedPoints.length > 0) {
+      const fraudData: ScatterDataPoint[] = processedPoints
+        .filter(p => p.is_fraud)
+        .map(p => ({ x: p.age, y: p.distance_km })); // Format for Chart.js
+
+      const nonFraudData: ScatterDataPoint[] = processedPoints
+        .filter(p => !p.is_fraud)
+        .map(p => ({ x: p.age, y: p.distance_km }));
+
+      // Prepare chart data structure
+      const chartData: ChartData<'scatter'> = {
+        datasets: [
+          {
+            label: 'Non-Fraudulent',
+            data: nonFraudData,
+            backgroundColor: normalColor,
+            borderColor: normalBorderColor,
+            pointRadius: 4, // Slightly smaller radius for normal points
+            pointBorderWidth: 1,
+          },
+          {
+            label: 'Fraudulent',
+            data: fraudData,
+            backgroundColor: fraudColor,
+            borderColor: fraudBorderColor,
+            pointRadius: 6, // Slightly larger radius for fraud points
+            pointBorderWidth: 1,
+          },
+        ],
+      };
+
+      // Prepare chart configuration
+      const config: ChartConfiguration<'scatter'> = {
+        type: 'scatter',
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false, // Allow chart to fill container height
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: legendColor, // Legend text color
+              },
+            },
+            title: {
+              display: true,
+              text: 'Transaction Distance vs. Customer Age',
+              color: textEmphasisColor, // Title color
+              font: { size: 16 }
+            },
+            tooltip: {
+              backgroundColor: tooltipBgColor, // Tooltip background
+              titleColor: textEmphasisColor, // Tooltip title color
+              bodyColor: textColor, // Tooltip body color
+              callbacks: {
+                  label: function(context) {
+                      let label = context.dataset.label || '';
+                      if (label) {
+                          label += ': ';
+                      }
+                      if (context.parsed.x !== null && context.parsed.y !== null) {
+                          // Access original point data if needed (more complex setup)
+                          // For now, just use parsed values
+                          label += `(Age: ${context.parsed.x}, Distance: ${context.parsed.y.toFixed(1)} km)`;
+                      }
+                      return label;
+                  }
+              }
+            }
+          },
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              title: {
+                display: true,
+                text: 'Customer Age',
+                color: axisColor, // X-axis title color
+              },
+              grid: {
+                color: gridColor, // X-axis grid line color
+              },
+              ticks: {
+                color: axisColor, // X-axis tick label color
+              },
+            },
+            y: {
+              type: 'linear',
+              title: {
+                display: true,
+                text: 'Transaction Distance (km)',
+                color: axisColor, // Y-axis title color
+              },
+              grid: {
+                color: gridColor, // Y-axis grid line color
+              },
+              ticks: {
+                color: axisColor, // Y-axis tick label color
+              },
+            },
+          },
+        },
+      };
+
+      // Create the new chart instance and store it
+      try {
+        chartInstanceRef.current = new Chart(canvas, config);
+        // console.log("ScatterPlot (Chart.js): New chart instance created.");
+      } catch (error) {
+         console.error("ScatterPlot (Chart.js): Failed to create chart instance.", error);
+         setPlotStatus('error');
+         setErrorMessage("Failed to render the chart.");
+      }
+    }
+
+    // No cleanup function needed here as destruction happens at the start of the effect
+
+  }, [data, loading, plotStatus]); // Dependencies: Re-run when data, loading, or internal status changes
+
+
+  // --- Render Logic based on plotStatus ---
+  let content;
+  switch (plotStatus) {
+    case 'loading':
+      content = (
+        <Box sx={{ textAlign: 'center', color: textColor }}>
+          <CircularProgress sx={{ color: loadingSpinnerColor }} size={40} />
+          <Typography variant="body2" sx={{ mt: 1 }}>Loading Plot...</Typography>
+        </Box>
+      );
+      break;
+    case 'no_data':
+      content = (
+        <Typography variant="body2" sx={{ color: textColor, textAlign: 'center', p: 2 }}>
+          {errorMessage || "No valid data points found for plot."}
+        </Typography>
+      );
+      break;
+    case 'error':
+       content = (
+        <Typography variant="body2" sx={{ color: fraudColor, textAlign: 'center', p: 2 }}>
+          {errorMessage || "An error occurred while generating the plot."}
+        </Typography>
+      );
+      break;
+    case 'initial':
+        content = (
+         <Typography variant="body2" sx={{ color: textColor, textAlign: 'center', p: 2 }}>
+           Run analysis to generate scatter plot data.
+         </Typography>
+       );
+       break;
+    case 'ready':
+    default:
+      content = null; // Chart will be visible via the canvas
+      break;
+  }
+
+  return (
+    <Box
+      sx={{
+        width: '100%', height: '100%', display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        position: 'relative', overflow: 'hidden', // Important for canvas sizing
+      }}
+    >
+      {/* Canvas Container - always present but might be hidden */}
+      <Box sx={{
+          width: '100%', height: '100%',
+          // Hide canvas visually if showing loader/message, but keep it in DOM
+          visibility: plotStatus === 'ready' ? 'visible' : 'hidden',
+          position: plotStatus === 'ready' ? 'relative' : 'absolute', // Keep in flow only when ready
+      }}>
+          <canvas ref={canvasRef} />
+      </Box>
+
+
+      {/* Display Loader or Messages overlay */}
+      {content && (
+         <Box sx={{
+             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+             display: 'flex', alignItems: 'center', justifyContent: 'center',
+             // Optional: Add a background overlay when showing messages
+             // backgroundColor: 'rgba(30, 30, 60, 0.5)',
+             // backdropFilter: 'blur(2px)'
+         }}>
+            {content}
+         </Box>
+      )}
+    </Box>
+  );
+};
+
+export default ScatterPlot;
