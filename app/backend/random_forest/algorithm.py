@@ -157,7 +157,7 @@ class RandomForestAnalyzer:
         # Target variable
         labels = df['is_fraud'].values
         
-        return features.values, labels
+        return features.values, labels, df
     
     @staticmethod
     def run_analysis(n_trees=100, max_depth=10, min_samples_split=2, feature_subset_size=None):
@@ -171,8 +171,8 @@ class RandomForestAnalyzer:
         
         start_time = time.time()
         
-        # Prepare data
-        features, true_labels = RandomForestAnalyzer.prepare_data()
+        # Prepare data - now also getting the original DataFrame
+        features, true_labels, df = RandomForestAnalyzer.prepare_data()
         
         # Initialize and train model
         model = CustomRandomForest(
@@ -210,10 +210,14 @@ class RandomForestAnalyzer:
         recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
         
+        # Identify fraud transactions
+        fraud_indices = np.where(predictions == 1)[0]
+        fraud_transactions = df.iloc[fraud_indices].to_dict('records')
+        
         execution_time = time.time() - start_time
         
         # Return results with model save status
-        return {
+        result = {
             'execution_time': execution_time,
             'accuracy': round(accuracy, 2),
             'precision': round(precision, 2),
@@ -237,17 +241,23 @@ class RandomForestAnalyzer:
                 'min_samples_split': min_samples_split,
                 'feature_subset_size': feature_subset_size
             },
-            'model_save_status': model_save_status
+            'model_save_status': model_save_status,
+            'fraud_transactions': fraud_transactions,
+            'fraud_count': len(fraud_transactions)
         }
+        
+        return result
     
     @staticmethod
-    def predict_with_saved_model(input_features):
+    def predict_with_saved_model(input_features=None, **kwargs):
         """
-        Use the saved model to make predictions on new data.
+        Use the saved model to make predictions of data.
         
         Args:
             input_features: List or array of feature values in format [amt, distance_km, age, trans_hour]
-                           Can be a single sample or multiple samples
+                           Can be a single sample or multiple samples. If None, will return model info only.
+                           If 'training_data', will predict on all data used for training.
+            **kwargs: Additional arguments (ignored, for compatibility with views)
         
         Returns:
             Dict containing predictions and status
@@ -263,6 +273,76 @@ class RandomForestAnalyzer:
             # Load the model from disk
             with open(RandomForestAnalyzer.MODEL_PATH, 'rb') as f:
                 model = pickle.load(f)
+            
+            # If input_features is 'training_data', use the same data from prepare_data
+            if input_features == 'training_data':
+                start_time = time.time()
+                features, true_labels, df = RandomForestAnalyzer.prepare_data()
+                
+                # Make predictions
+                predictions = model.predict(features)
+                
+                # Calculate metrics
+                true_pos = np.sum((predictions == 1) & (true_labels == 1))
+                false_pos = np.sum((predictions == 1) & (true_labels == 0))
+                false_neg = np.sum((predictions == 0) & (true_labels == 1))
+                true_neg = np.sum((predictions == 0) & (true_labels == 0))
+                
+                accuracy = (true_pos + true_neg) / len(true_labels)
+                precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
+                recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
+                f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+                
+                # Identify fraud transactions
+                fraud_indices = np.where(predictions == 1)[0]
+                fraud_transactions = df.iloc[fraud_indices].to_dict('records')
+                
+                execution_time = time.time() - start_time
+                
+                # Return results with the exact same structure as run_analysis
+                return {
+                    'execution_time': execution_time,
+                    'accuracy': round(accuracy, 2),
+                    'precision': round(precision, 2),
+                    'recall': round(recall, 2),
+                    'f1_score': round(f1, 2),
+                    'confusion_matrix': {
+                        'true_positives': int(true_pos),
+                        'false_positives': int(false_pos),
+                        'false_negatives': int(false_neg),
+                        'true_negatives': int(true_neg)
+                    },
+                    'data_points': len(features),
+                    'features': features.tolist(),
+                    'scores': predictions.tolist(),  # Using predictions as scores
+                    'predictions': predictions.tolist(),
+                    'algorithm': 'custom_random_forest',
+                    'data_structure': 'binary_trees',
+                    'parameters': {
+                        'n_trees': model.n_trees,
+                        'max_depth': model.max_depth,
+                        'min_samples_split': model.min_samples_split,
+                        'feature_subset_size': model.feature_subset_size
+                    },
+                    'model_save_status': 'Using saved model',
+                    'fraud_transactions': fraud_transactions,
+                    'fraud_count': len(fraud_transactions)
+                }
+            
+            # If no input features provided, just return model info
+            if input_features is None:
+                return {
+                    'status': 'success',
+                    'message': 'Model is loaded and ready for predictions',
+                    'model_used': RandomForestAnalyzer.MODEL_PATH,
+                    'model_parameters': {
+                        'n_trees': model.n_trees,
+                        'max_depth': model.max_depth,
+                        'min_samples_split': model.min_samples_split,
+                        'feature_subset_size': model.feature_subset_size
+                    },
+                    'usage': 'To make predictions, provide input_features parameter with format [amt, distance_km, age, trans_hour] or use "training_data" to predict on all training data'
+                }
             
             # Convert input to numpy array
             input_array = np.array(input_features)
