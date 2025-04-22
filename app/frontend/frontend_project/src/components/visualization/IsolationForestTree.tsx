@@ -422,12 +422,8 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
     
     if (animationActive) return;
     
-    // Start API call
-    isolationForestMutation.mutate({
-      trees: thresholds.tree_count,
-      sample_size: thresholds.sample_size,
-      threshold: thresholds.threshold
-    });
+    // IMPORTANT: Removed the API call from here to prevent duplicate calls
+    // The API call now happens only in the dashboard component
     
     setAnimationActive(true);
     setCurrentTree(1);
@@ -515,18 +511,22 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
     >
       <Box sx={{ 
         position: 'relative', 
-        width: '100%', 
-        height: '100%',
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        // Reduced dimensions matching TreeVisualization
+        height: '280px',
+        overflow: 'hidden'
       }}>
         <canvas 
           ref={canvasRef} 
           style={{ 
             width: '100%', 
             height: '100%', 
-            display: 'block'
+            display: 'block',
+            // Ensure canvas doesn't grow too large
+            maxHeight: '280px'
           }}
         />
         

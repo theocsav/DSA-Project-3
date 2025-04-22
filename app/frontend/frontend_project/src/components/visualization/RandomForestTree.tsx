@@ -385,12 +385,8 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
 
     if (animationActive) return;
     
-    // Start API call
-    randomForestMutation.mutate({
-      n_trees: thresholds.tree_count,
-      max_depth: thresholds.max_tree_depth,
-      min_samples_split: thresholds.sample_size
-    });
+    // IMPORTANT: Removed the API call from here to prevent duplicate calls
+    // The API call now happens only in the dashboard component
     
     setAnimationActive(true);
     setCurrentTree(1);
@@ -483,11 +479,13 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
         ref={containerRef}
         sx={{ 
           position: 'relative', 
-          width: '100%', 
-          height: '100%',
+          width: '100%',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          // Reduced height matching IsolationForestTree
+          height: '280px',
+          overflow: 'hidden'
         }}
       >
         <svg 
@@ -495,7 +493,12 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
           width="100%" 
           height="100%" 
           preserveAspectRatio="xMidYMid meet"
-          style={{ display: 'block' }}
+          style={{ 
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            maxHeight: '280px'
+          }}
         >
           {/* SVG content is generated dynamically */}
         </svg>

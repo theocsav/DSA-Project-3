@@ -175,7 +175,6 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({
           </Typography>
           {data.is_fraud !== undefined && (
             <Typography variant="caption" sx={{ 
-              color: 'white', 
               display: 'block',
               mt: 0.5,
               fontWeight: 'bold',
@@ -205,7 +204,6 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({
         bottom: -5, 
         left: '50%',
         transform: 'translateX(-50%)',
-        backgroundColor: 'rgba(0,0,0,0.6)',
         borderRadius: 1,
         p: 1,
         display: 'flex',
@@ -284,7 +282,13 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({
   };
 
   return (
-    <Box sx={{ width: '100%', height: '100%', position: 'relative' }}>
+    <Box sx={{ 
+      width: '100%', 
+      height: '100%', 
+      position: 'relative',
+      maxHeight: '100%',
+      overflow: 'hidden' // Prevent content from expanding container
+    }}>
       {loading ? (
         <Box sx={{ 
           display: 'flex', 
@@ -343,7 +347,7 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({
               />
               <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
               <Scatter 
-                name="Transactions" 
+                name="" 
                 data={scatterData}
                 shape="circle"
               >
@@ -355,19 +359,6 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({
                   />
                 ))}
               </Scatter>
-              <Legend 
-                verticalAlign="bottom" 
-                align="center"
-                height={30}
-                wrapperStyle={{
-                  color: 'rgba(255,255,255,0.7)',
-                  paddingBottom: '5px',
-                  fontSize: '12px',
-                  transform: 'translateY(15px)',
-                  width: '50%',
-                  margin: '0 auto'
-                }}
-              />
             </ScatterChart>
           </ResponsiveContainer>
         </>

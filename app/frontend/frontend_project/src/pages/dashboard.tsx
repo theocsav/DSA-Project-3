@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, CssBaseline, GlobalStyles, IconButton, Tooltip, Typography, Paper } from '@mui/material';
+import { Box, CssBaseline, GlobalStyles, IconButton, Tooltip, Typography, Paper, Grid } from '@mui/material';
 
 // Material UI Icons
 import CloseIcon from '@mui/icons-material/Close';
@@ -11,7 +11,8 @@ import ModelSettingsDialog from '../components/dashboard/ModelSettingsDialog';
 import TeamDialog from '../components/dashboard/TeamDialog';
 import { TeamMember } from '../components/TeamMemberCard';
 import { commonStyles, animations } from '../styles/common';
-import { AnalysisResult } from '../api/types';
+import { AnalysisResult, IsolationForestParams, RandomForestParams } from '../api/types';
+import { useIsolationForestAnalysis, useRandomForestAnalysis } from '../api/queries';
 
 // Visualization components
 import IsolationForestTree from '../components/visualization/IsolationForestTree';
@@ -37,6 +38,10 @@ export default function Dashboard() {
   const [analysisResults, setAnalysisResults] = useState<any>(null);
   const [scatterLoading, setScatterLoading] = useState(false);
 
+  // API mutation hooks
+  const isolationForestMutation = useIsolationForestAnalysis();
+  const randomForestMutation = useRandomForestAnalysis();
+
   // Stats for the status bar
   const [stats, setStats] = useState({
     fraudPercentage: '7%',
@@ -61,30 +66,79 @@ export default function Dashboard() {
     setThresholds((prev: Thresholds) => ({ ...prev, [field]: value }));
   };
 
+  // Process results from API and update UI components
+  const processResults = (modelResults: AnalysisResult) => {
+    // Extract key metrics
+    const fraudCount = modelResults.confusion_matrix?.true_positives || 0;
+    const totalCount = modelResults.data_points || 100000;
+    const fraudPercentage = modelResults.fraud_percentage || (fraudCount / totalCount * 100);
+    
+    setStats({
+      fraudPercentage: `${Math.round(fraudPercentage)}%`,
+      analyzedCount: `${totalCount.toLocaleString()}`,
+      accuracy: `${(modelResults.accuracy * 100).toFixed(1)}%`,
+      time: `${modelResults.execution_time.toFixed(1)}s`,
+    });
+
+    // Update scatter plot and fraud transactions data
+    setAnalysisResults(modelResults);
+    
+    // Turn off loading state for scatter plot
+    setScatterLoading(false);
+    
+    // Log results for debugging
+    console.log(`Analysis completed with ${selectedModel}:`, modelResults);
+  };
+
   // Handle run model click
   const handleRunModel = () => {
+    // Clear previous results and set loading states
     setIsRunning(true);
     setScatterLoading(true);
     setAnalysisResults(null);
-  };
+    
+    // Display loading message in stats
+    setStats(prevStats => ({
+      ...prevStats,
+      time: 'Loading...'
+    }));
 
-  // Handle model completion
-  const handleModelComplete = (modelResults: any) => {
-    setIsRunning(false);
-    setScatterLoading(false);
-    
-    // Update analysis results for scatter plot
-    setAnalysisResults(modelResults);
-    
-    // Update stats from model results
-    if (modelResults) {
-      setStats({
-        fraudPercentage: `${Math.round(modelResults.fraud_percentage || 7)}%`,
-        analyzedCount: `${modelResults.data_points?.toLocaleString() || '100,000'}`,
-        accuracy: `${Math.round(modelResults.accuracy * 100)}%`,
-        time: `${modelResults.execution_time.toFixed(1)}s`,
+    // Make the appropriate API call based on the selected model
+    if (selectedModel === 'Isolation Forest') {
+      const params: IsolationForestParams = {
+        trees: thresholds.tree_count,
+        sample_size: thresholds.sample_size,
+        threshold: thresholds.threshold
+      };
+      
+      isolationForestMutation.mutate(params, {
+        onSuccess: (data) => {
+          // Process results immediately when API call returns
+          processResults(data);
+        }
+      });
+    } else {
+      const params: RandomForestParams = {
+        n_trees: thresholds.tree_count,
+        max_depth: thresholds.max_tree_depth,
+        min_samples_split: thresholds.sample_size
+      };
+      
+      randomForestMutation.mutate(params, {
+        onSuccess: (data) => {
+          // Process results immediately when API call returns
+          processResults(data);
+        }
       });
     }
+  };
+
+  // Handle model visualization completion
+  const handleModelComplete = () => {
+    // Just mark the visualization animation as complete
+    setIsRunning(false);
+    // Note that we don't need to update UI components here anymore
+    // as they're already updated from the API call's onSuccess callback
   };
 
   // Team members data
@@ -225,7 +279,9 @@ export default function Dashboard() {
               flexDirection: { xs: 'column', md: 'row' },
               gap: 3,
               width: '100%',
-              height: '90%',
+              height: '60%', // Fixed height percentage
+              minHeight: '400px', // Ensure minimum height
+              maxHeight: '400px', // Enforce maximum height
             }}>
               {/* Visualization Box */}
               <Paper 
@@ -258,7 +314,8 @@ export default function Dashboard() {
                   alignItems: 'center', 
                   justifyContent: 'center',
                   position: 'relative',
-                  color: 'rgba(255, 255, 255, 0.7)'
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  overflow: 'hidden' // Prevent content overflow
                 }}>
                   {/* Conditionally render the appropriate visualization */}
                   {selectedModel === 'Isolation Forest' ? (
@@ -297,7 +354,8 @@ export default function Dashboard() {
                   '&:hover': {
                     transform: 'translateY(-5px)',
                     boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
-                  }
+                  },
+                  overflow: 'hidden' // Prevent content overflow
                 }}
               >
                 <Typography variant="h5" sx={{ color: 'white', mb: 2, fontWeight: 500 }}>
@@ -308,7 +366,8 @@ export default function Dashboard() {
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
-                  color: 'rgba(255, 255, 255, 0.7)'
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  overflow: 'hidden' // Prevent content overflow
                 }}>
                   <ScatterPlot 
                     data={analysisResults} 
@@ -328,6 +387,8 @@ export default function Dashboard() {
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 p: 3,
                 height: '35%',
+                minHeight: '200px', // Minimum height
+                maxHeight: '200px', // Maximum height to stay consistent
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
@@ -363,28 +424,49 @@ export default function Dashboard() {
               }}>
                 {analysisResults ? (
                   <Box>
-                    <Typography variant="body2" sx={{ mb: 2 }}>
-                      Analysis completed with {selectedModel}. 
-                      Detected {analysisResults.confusion_matrix?.true_positives || 0} fraudulent transactions 
-                      out of {analysisResults.data_points || 0} total transactions.
-                    </Typography>
-                    <Typography variant="body2" component="div" sx={{ mb: 1 }}>
-                      <strong>Model Performance:</strong>
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-                      <Box sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
-                        <Typography variant="caption">Accuracy: {(analysisResults.accuracy * 100).toFixed(1)}%</Typography>
+                    {/* Display detected fraud transactions if available */}
+                    {analysisResults.fraud_transactions && analysisResults.fraud_transactions.length > 0 ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
+                        {analysisResults.fraud_transactions.slice(0, 10).map((transaction: any, index: number) => (
+                          <Box 
+                            key={index}
+                            sx={{ 
+                              p: 0.75, 
+                              bgcolor: 'rgba(255,107,107,0.1)', 
+                              borderRadius: '8px',
+                              border: '1px solid rgba(255,107,107,0.2)',
+                              display: 'flex',
+                              flexDirection: 'row',
+                              justifyContent: 'left',
+                              alignItems: 'normal',
+                              gap: 2,
+                            }}
+                          >
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                              Amount: <strong>${transaction.amt?.toFixed(2)}</strong>
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                              Distance: <strong>{transaction.distance_km?.toFixed(1)} km</strong>
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                              Age: <strong>{transaction.age?.toFixed(0)}</strong>
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                              Hour: <strong>{transaction.trans_hour}:00</strong>
+                            </Typography>
+                          </Box>
+                        ))}
+                        {analysisResults.fraud_transactions.length > 10 && (
+                          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', mt: 1 }}>
+                            Showing 10 of {analysisResults.fraud_transactions.length} fraud transactions
+                          </Typography>
+                        )}
                       </Box>
-                      <Box sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
-                        <Typography variant="caption">Precision: {(analysisResults.precision * 100).toFixed(1)}%</Typography>
-                      </Box>
-                      <Box sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
-                        <Typography variant="caption">Recall: {(analysisResults.recall * 100).toFixed(1)}%</Typography>
-                      </Box>
-                      <Box sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
-                        <Typography variant="caption">F1 Score: {(analysisResults.f1_score * 100).toFixed(1)}%</Typography>
-                      </Box>
-                    </Box>
+                    ) : (
+                      <Typography variant="body2" sx={{ mt: 2 }}>
+                        No fraud transactions detected.
+                      </Typography>
+                    )}
                   </Box>
                 ) : (
                   <Typography variant="body2" component="div" sx={{ p: 1 }}>

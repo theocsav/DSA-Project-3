@@ -12,7 +12,7 @@ const getEndpoints = () => {
   const paths = {
     stats: 'transactions/stats/',
     isoForest: 'isolation-forest/analyze/',
-    randForest: 'random_forest/analyze/'
+    randForest: 'random-forest/analyze/'
   };
   
   return {
