@@ -282,9 +282,10 @@ class IsolationForestAnalyzer:
                 'true_negatives': int(true_neg)
             },
             'data_points': len(features),
-            'features': features.tolist(),
-            'scores': scores.tolist(),
-            'predictions': predictions.tolist(),
+            # Removing large arrays from the response to prevent site crashes
+            # 'features': features.tolist(),
+            # 'scores': scores.tolist(),
+            # 'predictions': predictions.tolist(),
             'algorithm': 'custom_isolation_forest',
             'data_structure': 'binary_trees',
             'parameters': {
@@ -365,9 +366,10 @@ class IsolationForestAnalyzer:
                     'true_negatives': int(true_neg)
                 },
                 'data_points': len(features),
-                'features': features.tolist(),
-                'scores': scores.tolist(),
-                'predictions': predictions.tolist(),
+                # Removing large arrays from the response to prevent site crashes
+                # 'features': features.tolist(),
+                # 'scores': scores.tolist(),
+                # 'predictions': predictions.tolist(),
                 'algorithm': 'custom_isolation_forest',
                 'data_structure': 'binary_trees',
                 'parameters': {

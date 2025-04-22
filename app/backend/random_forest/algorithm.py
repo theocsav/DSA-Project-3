@@ -230,9 +230,10 @@ class RandomForestAnalyzer:
                 'true_negatives': int(true_neg)
             },
             'data_points': len(features),
-            'features': features.tolist(),
-            'scores': scores.tolist(),
-            'predictions': predictions.tolist(),
+            # Removing large arrays from the response to prevent site crashes
+            # 'features': features.tolist(),
+            # 'scores': scores.tolist(), 
+            # 'predictions': predictions.tolist(),
             'algorithm': 'custom_random_forest',
             'data_structure': 'binary_trees',
             'parameters': {
@@ -313,9 +314,10 @@ class RandomForestAnalyzer:
                         'true_negatives': int(true_neg)
                     },
                     'data_points': len(features),
-                    'features': features.tolist(),
-                    'scores': predictions.tolist(),  # Using predictions as scores
-                    'predictions': predictions.tolist(),
+                    # Removing large arrays from the response to prevent site crashes
+                    # 'features': features.tolist(),
+                    # 'scores': predictions.tolist(),  # Using predictions as scores
+                    # 'predictions': predictions.tolist(),
                     'algorithm': 'custom_random_forest',
                     'data_structure': 'binary_trees',
                     'parameters': {
