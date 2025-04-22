@@ -268,23 +268,22 @@ export default function Dashboard() {
             sx={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 3,
+              gap: 2, // No gap between components - removed spacing
               width: '100%',
-              height: '100%',
-              maxHeight: '95vh',
-              mt: '60px',
-              mb: '10px',
+              height: '100%', 
+              maxHeight: 'calc(100vh - 80px)', // Fill available height minus stats padding
+              mt: '65px', // Adjusted to position below stats pills
+              mb: '5px',
             }}
           >
             {/* Two graphs side by side */}
             <Box sx={{ 
               display: 'flex', 
               flexDirection: { xs: 'column', md: 'row' },
-              gap: 3,
+              gap: 3, // Minimal gap between side-by-side boxes
               width: '100%',
-              height: '65%', // Increased from 60% to 65%
-              minHeight: '450px', // Increased from 400px
-              maxHeight: '450px', // Increased from 400px
+              height: '66%', // Proportional height for top section
+              minHeight: '0', // Allow flexible sizing
             }}>
               {/* Visualization Box */}
               <Paper 
@@ -294,8 +293,8 @@ export default function Dashboard() {
                   borderRadius: '16px',
                   background: 'rgba(30, 30, 60, 0.8)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
-                  p: 3,
-                  height: '100%',
+                  p: 2,
+                  height: '100%', // Fill available height
                   display: 'flex',
                   flexDirection: 'column',
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
@@ -305,10 +304,10 @@ export default function Dashboard() {
                     transform: 'translateY(-5px)',
                     boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
                   },
-                  overflow: 'hidden' // Ensure content doesn't overflow
+                  overflow: 'hidden',
                 }}
               >
-                <Typography variant="h5" sx={{ color: 'white', mb: 2, fontWeight: 500 }}>
+                <Typography variant="h5" sx={{ color: 'white', mb: 1.5, fontWeight: 500 }}>
                   Visualization
                 </Typography>
                 <Box sx={{ 
@@ -347,8 +346,8 @@ export default function Dashboard() {
                   borderRadius: '16px',
                   background: 'rgba(30, 30, 60, 0.8)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
-                  p: 3,
-                  height: '100%',
+                  p: 2,
+                  height: '100%', // Fill available height
                   display: 'flex',
                   flexDirection: 'column',
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
@@ -358,24 +357,63 @@ export default function Dashboard() {
                     transform: 'translateY(-5px)',
                     boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
                   },
-                  overflow: 'hidden' // Prevent content overflow
+                  overflow: 'hidden',
                 }}
               >
-                <Typography variant="h5" sx={{ color: 'white', mb: 2, fontWeight: 500 }}>
+                <Typography variant="h5" sx={{ color: 'white', mb: 1.5, fontWeight: 500 }}>
                   Scatter Plot
                 </Typography>
                 <Box sx={{ 
                   flex: 1, 
                   display: 'flex', 
+                  flexDirection: 'column',
                   alignItems: 'center', 
                   justifyContent: 'center',
                   color: 'rgba(255, 255, 255, 0.7)',
                   overflow: 'hidden' // Prevent content overflow
                 }}>
-                  <ScatterPlot 
-                    data={analysisResults} 
-                    loading={scatterLoading}
-                  />
+                  <Box sx={{ width: '100%', height: 'calc(100% - 30px)' }}>
+                    <ScatterPlot 
+                      data={analysisResults} 
+                      loading={scatterLoading}
+                    />
+                  </Box>
+                  
+                  {/* Transaction type labels below chart */}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    gap: 4, 
+                    mt: 1,
+                    mb: 0.5
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ 
+                        width: 12, 
+                        height: 12, 
+                        borderRadius: '50%', 
+                        bgcolor: 'rgba(33, 150, 243, 0.7)', 
+                        border: '1px solid rgba(33, 150, 243, 1)',
+                        mr: 1 
+                      }} />
+                      <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                        Non-Fraudulent
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box sx={{ 
+                        width: 12, 
+                        height: 12, 
+                        borderRadius: '50%', 
+                        bgcolor: 'rgba(255, 99, 132, 0.7)', 
+                        border: '1px solid rgba(255, 99, 132, 1)',
+                        mr: 1 
+                      }} />
+                      <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                        Fraudulent
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
               </Paper>
             </Box>
@@ -388,10 +426,9 @@ export default function Dashboard() {
                 borderRadius: '16px',
                 background: 'rgba(30, 30, 60, 0.8)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
-                p: 3,
-                height: '30%', // Decreased from 35% to 30%
-                minHeight: '180px', // Decreased from 200px
-                maxHeight: '180px', // Decreased from 200px
+                p: 2,
+                height: '34%', // Increased to fill remaining space
+                mt: 1, // Very minimal top margin
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
@@ -403,7 +440,7 @@ export default function Dashboard() {
                 }
               }}
             >
-              <Typography variant="h5" sx={{ color: 'white', mb: 2, fontWeight: 500 }}>
+              <Typography variant="h5" sx={{ color: 'white', mb: 1.5, fontWeight: 500 }}>
                 Fraud Transactions
               </Typography>
               <Box sx={{ 

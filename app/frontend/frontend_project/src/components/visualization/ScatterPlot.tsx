@@ -194,7 +194,7 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ data, loading }) => {
           maintainAspectRatio: false, // Allow chart to fill container height/width independently
           plugins: {
             legend: {
-              position: 'top', // Position the legend at the top
+              display: false, // Hide the default legend at the top
               labels: {
                 color: legendColor, // Legend text color
                 usePointStyle: true, // Use point style (circle) in legend
