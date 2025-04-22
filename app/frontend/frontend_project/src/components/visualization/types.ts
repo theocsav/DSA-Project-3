@@ -83,7 +83,11 @@ export const COLORS = {
   NODE_STROKE: '#333',
   CONNECTION: '#aaa',
   SPLIT_LINE: '#4caf50', // Green - for split lines
-  SPLIT_TEXT: '#ffffff'  // White - for split text
+  SPLIT_TEXT: '#ffffff',  // White - for split text
+  SCATTER_POINT: '#8884d8', // Purple - for scatter plot points
+  SCATTER_FRAUD: '#e53935', // Red - for fraudulent transactions
+  SCATTER_NORMAL: '#3f51b5', // Blue - for normal transactions
+  GRID: 'rgba(255,255,255,0.15)' // Grid lines for charts
 };
 
 // Constants for tree rendering

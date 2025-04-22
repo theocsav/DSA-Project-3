@@ -39,7 +39,7 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
   const isolationForestMutation = useIsolationForestAnalysis();
   
   // FIXED SEED FOR DETERMINISTIC TREE GENERATION
-  const FIXED_SEED = 12345;
+  const FIXED_SEED = 42;
   
   // Canvas dimensions
   const TREE_WIDTH = 600;

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Box, CssBaseline, GlobalStyles, IconButton, Tooltip, Typography, Paper } from '@mui/material';
 
 // Material UI Icons
@@ -11,10 +11,12 @@ import ModelSettingsDialog from '../components/dashboard/ModelSettingsDialog';
 import TeamDialog from '../components/dashboard/TeamDialog';
 import { TeamMember } from '../components/TeamMemberCard';
 import { commonStyles, animations } from '../styles/common';
+import { AnalysisResult } from '../api/types';
 
 // Visualization components
 import IsolationForestTree from '../components/visualization/IsolationForestTree';
 import RandomForestTree from '../components/visualization/RandomForestTree';
+import ScatterPlot from '../components/visualization/ScatterPlot';
 
 // Constants
 const drawerWidth = 240;
@@ -32,6 +34,8 @@ export default function Dashboard() {
   const [selectedModel, setSelectedModel] = useState('Random Forest');
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [scatterLoading, setScatterLoading] = useState(false);
 
   // Stats for the status bar
   const [stats, setStats] = useState({
@@ -60,11 +64,17 @@ export default function Dashboard() {
   // Handle run model click
   const handleRunModel = () => {
     setIsRunning(true);
+    setScatterLoading(true);
+    setAnalysisResults(null);
   };
 
   // Handle model completion
   const handleModelComplete = (modelResults: any) => {
     setIsRunning(false);
+    setScatterLoading(false);
+    
+    // Update analysis results for scatter plot
+    setAnalysisResults(modelResults);
     
     // Update stats from model results
     if (modelResults) {
@@ -269,7 +279,7 @@ export default function Dashboard() {
                 </Box>
               </Paper>
 
-              {/* Graph Box 2 */}
+              {/* Scatter Plot Box */}
               <Paper 
                 elevation={3} 
                 sx={{
@@ -300,9 +310,10 @@ export default function Dashboard() {
                   justifyContent: 'center',
                   color: 'rgba(255, 255, 255, 0.7)'
                 }}>
-                  <Typography>
-                    Scatter plot visualization will appear here
-                  </Typography>
+                  <ScatterPlot 
+                    data={analysisResults} 
+                    loading={scatterLoading}
+                  />
                 </Box>
               </Paper>
             </Box>
@@ -350,9 +361,36 @@ export default function Dashboard() {
                   },
                 },
               }}>
-                <Typography variant="body2" component="div" sx={{ p: 1 }}>
-                  Transaction details will appear here after analysis is complete
-                </Typography>
+                {analysisResults ? (
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                      Analysis completed with {selectedModel}. 
+                      Detected {analysisResults.confusion_matrix?.true_positives || 0} fraudulent transactions 
+                      out of {analysisResults.data_points || 0} total transactions.
+                    </Typography>
+                    <Typography variant="body2" component="div" sx={{ mb: 1 }}>
+                      <strong>Model Performance:</strong>
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+                      <Box sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                        <Typography variant="caption">Accuracy: {(analysisResults.accuracy * 100).toFixed(1)}%</Typography>
+                      </Box>
+                      <Box sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                        <Typography variant="caption">Precision: {(analysisResults.precision * 100).toFixed(1)}%</Typography>
+                      </Box>
+                      <Box sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                        <Typography variant="caption">Recall: {(analysisResults.recall * 100).toFixed(1)}%</Typography>
+                      </Box>
+                      <Box sx={{ p: 1, bgcolor: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                        <Typography variant="caption">F1 Score: {(analysisResults.f1_score * 100).toFixed(1)}%</Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Typography variant="body2" component="div" sx={{ p: 1 }}>
+                    Transaction details will appear here after analysis is complete
+                  </Typography>
+                )}
               </Box>
             </Paper>
           </Box>
