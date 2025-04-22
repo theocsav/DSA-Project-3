@@ -1,5 +1,3 @@
-// API types for fraud detection app
-
 // Transaction data type
 export interface Transaction {
   id?: number;
