@@ -4,10 +4,10 @@ import { commonStyles } from '../../styles/common';
 
 const WorkflowSteps: React.FC = () => {
   const steps = [
-    { step: 1, title: 'Data Ingestion & Cleansing', description: 'Aggregate, clean, and prepare transaction data for analysis.' },
-    { step: 2, title: 'Feature Engineering', description: 'Extract and normalize key attributes to enhance model performance.' },
-    { step: 3, title: 'Model Evaluation', description: 'Train algorithms on historical data and score new transactions.' },
-    { step: 4, title: 'Alert & Report', description: 'Flag suspicious activity, show patterns, and deliver insights.' }
+    { step: 1, title: 'Data Ingestion & Cleansing', description: 'Aggregate, clean, and prepare transaction data for analysis through methods such as parsing data into relevant categories and handling inconsistent formatting. Properly sorts data into quantifiable isolation forest/random forest data to enable accurate tree generations.' },
+    { step: 2, title: 'Feature Engineering', description: 'Extract and normalize key attributes to enhance model performance, including the time, location, and user behavior of each transaction. This step captures patterns and anomalies that are needed to distinguish real from fraudulent activity, optimizing accuracy.' },
+    { step: 3, title: 'Model Evaluation', description: 'Trains algorithms on historical data and scores new transactions, allowing each algorithm to generate informed, accurate calculations and detections. Isolation forest determines fraud on ease of isolation from data while random forest continuously generates decision trees based on observed trends and history in the data' },
+    { step: 4, title: 'Alert & Report', description: 'Flags suspicious activity, shows patterns, and delivers insights. Visualizes anomalies and models algorithm processes through interactive graphs. Guides user through the process of random tree generation and isolation forest insertions, outlining and visuzliaing anomaly detection.' }
   ];
 
   return (
