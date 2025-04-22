@@ -119,3 +119,6 @@ The `.env.local` file is excluded from Git to prevent committing sensitive infor
 - Cesar Valentin - Algorithm Development
 - Colgan Miller - Data Analysis
 - Vasco Hinostroza - Frontend Development
+
+
+This repository is licensed under CC BY-NC-ND 4.0. You may not use the material for commercial purposes or create derivative works. See the LICENSE file for more details.
