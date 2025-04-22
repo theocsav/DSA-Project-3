@@ -2,10 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { Chart, ChartConfiguration, ChartData, ScatterDataPoint, registerables } from 'chart.js'; // Import necessary types
 
-// Register Chart.js components (controllers, elements, scales, plugins)
 Chart.register(...registerables);
 
-// --- Interfaces (Should match dashboard and API response) ---
 interface PlotPoint {
   age: number;
   distance_km: number;
@@ -27,7 +25,7 @@ interface RawTransaction {
 interface AnalysisResult {
   fraud_transactions?: RawTransaction[];
   non_fraud_transactions?: RawTransaction[];
-  all_transactions?: RawTransaction[]; // Alternative structure if API combines them
+  all_transactions?: RawTransaction[]; 
   // Add other fields if needed (e.g., metrics, execution time)
 }
 
@@ -295,7 +293,7 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ data, loading }) => {
   }, [data, loading, plotStatus]);
 
 
-  // --- Render Logic based on plotStatus ---
+
   let content;
   switch (plotStatus) {
     case 'loading':
@@ -360,14 +358,12 @@ const ScatterPlot: React.FC<ScatterPlotProps> = ({ data, loading }) => {
       {/* This Box overlays the canvas area when content is not null */}
       {content && (
          <Box sx={{
-             position: 'absolute', // Position over the canvas container
+             position: 'absolute', 
              top: 0, left: 0, right: 0, bottom: 0,
              display: 'flex', alignItems: 'center', justifyContent: 'center',
-             // Optional: Add a semi-transparent background when showing messages/loader
-             // backgroundColor: 'rgba(30, 30, 60, 0.5)',
-             // backdropFilter: 'blur(2px)' // Optional blur effect
+
          }}>
-            {content} {/* Render the loading/error/no_data message */}
+            {content} {}
          </Box>
       )}
     </Box>

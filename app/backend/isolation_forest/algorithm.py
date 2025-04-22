@@ -249,7 +249,11 @@ class IsolationForestAnalyzer:
         # Identify fraud transactions
         fraud_indices = np.where(predictions == 1)[0]
         fraud_transactions = df.iloc[fraud_indices].to_dict('records')
-        
+
+        non_fraud_indices = np.where(predictions == 0)[0]
+        non_fraud_transactions = df.iloc[non_fraud_indices].to_dict('records')
+
+
         accuracy = (true_pos + true_neg) / len(true_labels)
         precision = true_pos / (true_pos + false_pos) if (true_pos + false_pos) > 0 else 0
         recall = true_pos / (true_pos + false_neg) if (true_pos + false_neg) > 0 else 0
@@ -295,6 +299,7 @@ class IsolationForestAnalyzer:
             },
             'model_save_status': model_save_status,
             'fraud_transactions': fraud_transactions,
+            'non_fraud_transactions': non_fraud_transactions,
             'fraud_count': len(fraud_transactions)
         }
     
@@ -349,6 +354,9 @@ class IsolationForestAnalyzer:
             # Identify fraud transactions
             fraud_indices = np.where(predictions == 1)[0]
             fraud_transactions = df.iloc[fraud_indices].to_dict('records')
+
+            non_fraud_indices = np.where(predictions == 0)[0]
+            non_fraud_transactions = df.iloc[non_fraud_indices].to_dict('records')
             
             execution_time = time.time() - start_time
             
@@ -378,7 +386,8 @@ class IsolationForestAnalyzer:
                     'threshold': threshold
                 },
                 'fraud_transactions': fraud_transactions,
-                'fraud_count': len(fraud_transactions)
+                'fraud_count': len(fraud_transactions),
+                'non_fraud_transactions': non_fraud_transactions
             }
             
         except Exception as e:

@@ -71,10 +71,15 @@ export default function Dashboard() {
     // Extract key metrics
     const fraudCount = modelResults.confusion_matrix?.true_positives || 0;
     const totalCount = modelResults.data_points || 100000;
-    const fraudPercentage = modelResults.fraud_percentage || (fraudCount / totalCount * 100);
     
+    // Use fraud_percentage from API if available, otherwise calculate it
+    const fraudPercentage = modelResults.fraud_percentage || 
+                           (fraudCount / totalCount * 100) || 
+                           (modelResults.fraud_count / totalCount * 100);
+    
+    // Update status bar with real-time values
     setStats({
-      fraudPercentage: `${Math.round(fraudPercentage)}%`,
+      fraudPercentage: `${fraudPercentage.toFixed(1)}%`,
       analyzedCount: `${totalCount.toLocaleString()}`,
       accuracy: `${(modelResults.accuracy * 100).toFixed(1)}%`,
       time: `${modelResults.execution_time.toFixed(1)}s`,
@@ -137,8 +142,6 @@ export default function Dashboard() {
   const handleModelComplete = () => {
     // Just mark the visualization animation as complete
     setIsRunning(false);
-    // Note that we don't need to update UI components here anymore
-    // as they're already updated from the API call's onSuccess callback
   };
 
   // Team members data
@@ -279,9 +282,9 @@ export default function Dashboard() {
               flexDirection: { xs: 'column', md: 'row' },
               gap: 3,
               width: '100%',
-              height: '60%', // Fixed height percentage
-              minHeight: '400px', // Ensure minimum height
-              maxHeight: '400px', // Enforce maximum height
+              height: '65%', // Increased from 60% to 65%
+              minHeight: '450px', // Increased from 400px
+              maxHeight: '450px', // Increased from 400px
             }}>
               {/* Visualization Box */}
               <Paper 
@@ -386,9 +389,9 @@ export default function Dashboard() {
                 background: 'rgba(30, 30, 60, 0.8)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 p: 3,
-                height: '35%',
-                minHeight: '200px', // Minimum height
-                maxHeight: '200px', // Maximum height to stay consistent
+                height: '30%', // Decreased from 35% to 30%
+                minHeight: '180px', // Decreased from 200px
+                maxHeight: '180px', // Decreased from 200px
                 display: 'flex',
                 flexDirection: 'column',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
@@ -427,7 +430,7 @@ export default function Dashboard() {
                     {/* Display detected fraud transactions if available */}
                     {analysisResults.fraud_transactions && analysisResults.fraud_transactions.length > 0 ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
-                        {analysisResults.fraud_transactions.slice(0, 10).map((transaction: any, index: number) => (
+                        {analysisResults.fraud_transactions.slice(0, 20).map((transaction: any, index: number) => (
                           <Box 
                             key={index}
                             sx={{ 
@@ -456,9 +459,9 @@ export default function Dashboard() {
                             </Typography>
                           </Box>
                         ))}
-                        {analysisResults.fraud_transactions.length > 10 && (
+                        {analysisResults.fraud_transactions.length > 20 && (
                           <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center', mt: 1 }}>
-                            Showing 10 of {analysisResults.fraud_transactions.length} fraud transactions
+                            Showing 20 of {analysisResults.fraud_transactions.length} fraud transactions
                           </Typography>
                         )}
                       </Box>
