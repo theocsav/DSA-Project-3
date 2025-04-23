@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Paper, Grid, Typography, Box, Chip } from '@mui/material';
 import { commonStyles } from '../../styles/common';
@@ -26,7 +27,11 @@ const TechnicalOverview: React.FC = () => (
         </Box>
         <Typography variant="h6" sx={{ color: commonStyles.colors.primary, mb: 2 }}>Data Visualization</Typography>
         <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-          Interactive charts and dashboards for real-time fraud monitoring and analysis.
+          <ul>
+            <li>Interactive charts and dashboards for real-time fraud monitoring and analysis.</li>
+            <li>Display model predictions (normal vs fraud) and real time identification and flagging of potential fraud</li>
+          </ul>
+          
         </Typography>
       </Grid>
       <Grid>
@@ -47,7 +52,14 @@ const TechnicalOverview: React.FC = () => (
         </Box>
         <Typography variant="h6" sx={{ color: commonStyles.colors.secondary, mb: 2 }}>ML Implementation</Typography>
         <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-          Optimized Random Forest and Isolation Forest models with tunable parameters for optimal performance.
+          <ul>
+            <li>
+              Optimized Random Forest and Isolation Forest models with tunable parameters for optimal performance.
+            </li>
+            <li>Enabled processing of transaction data with result delivery to front end </li>
+            <li>Enhanced pattern recognization in transactions to establish learning, evolving algorithms</li>
+          </ul>
+          
         </Typography>
       </Grid>
     </Grid>
