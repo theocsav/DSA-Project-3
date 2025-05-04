@@ -25,13 +25,11 @@ const TreeVisualization: React.FC<TreeVisualizationComponentProps> = ({
       ref={containerRef}
       sx={{
         width: '100%',
+        height: '100%',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        // Fixed height that doesn't change
-        height: '300px',
-        maxHeight: '300px',
       }}
     >
       {/* Visualization area */}
@@ -42,8 +40,7 @@ const TreeVisualization: React.FC<TreeVisualizationComponentProps> = ({
         alignItems: 'center',
         position: 'relative',
         width: '100%',
-        height: '280px', // Fixed height for visualization area
-        maxHeight: '280px',
+        height: 'calc(100% - 40px)', // Leave space for legend
         overflow: 'hidden', // Prevent content from expanding the container
       }}>
         {children}

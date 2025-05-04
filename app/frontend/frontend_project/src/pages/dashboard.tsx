@@ -71,12 +71,12 @@ export default function Dashboard() {
     // Extract key metrics
     const fraudCount = modelResults.confusion_matrix?.true_positives || 0;
     const totalCount = modelResults.data_points || 100000;
-    
+
     // Use fraud_percentage from API if available, otherwise calculate it
-    const fraudPercentage = modelResults.fraud_percentage || 
-                           (fraudCount / totalCount * 100) || 
-                           (modelResults.fraud_count / totalCount * 100);
-    
+    const fraudPercentage = modelResults.fraud_percentage ||
+      (fraudCount / totalCount * 100) ||
+      (modelResults.fraud_count / totalCount * 100);
+
     // Update status bar with real-time values
     setStats({
       fraudPercentage: `${fraudPercentage.toFixed(1)}%`,
@@ -87,55 +87,59 @@ export default function Dashboard() {
 
     // Update scatter plot and fraud transactions data
     setAnalysisResults(modelResults);
-    
+
     // Turn off loading state for scatter plot
     setScatterLoading(false);
-    
+
     // Log results for debugging
     console.log(`Analysis completed with ${selectedModel}:`, modelResults);
   };
 
+
   // Handle run model click
   const handleRunModel = () => {
     // Clear previous results and set loading states
-    setIsRunning(true);
-    setScatterLoading(true);
-    setAnalysisResults(null);
-    
-    // Display loading message in stats
-    setStats(prevStats => ({
-      ...prevStats,
-      time: 'Loading...'
-    }));
+    setIsRunning(false);  // First set to false to ensure re-rendering
+    setTimeout(() => {
+      setIsRunning(true);  // Then set to true to trigger visualization
+      setScatterLoading(true);
+      setAnalysisResults(null);
 
-    // Make the appropriate API call based on the selected model
-    if (selectedModel === 'Isolation Forest') {
-      const params: IsolationForestParams = {
-        trees: thresholds.tree_count,
-        sample_size: thresholds.sample_size,
-        threshold: thresholds.threshold
-      };
-      
-      isolationForestMutation.mutate(params, {
-        onSuccess: (data) => {
-          // Process results immediately when API call returns
-          processResults(data);
-        }
-      });
-    } else {
-      const params: RandomForestParams = {
-        n_trees: thresholds.tree_count,
-        max_depth: thresholds.max_tree_depth,
-        min_samples_split: thresholds.sample_size
-      };
-      
-      randomForestMutation.mutate(params, {
-        onSuccess: (data) => {
-          // Process results immediately when API call returns
-          processResults(data);
-        }
-      });
-    }
+      // Display loading message in stats
+      setStats(prevStats => ({
+        ...prevStats,
+        time: 'Loading...'
+      }));
+
+      // Make the appropriate API call based on the selected model
+      if (selectedModel === 'Isolation Forest') {
+        const params: IsolationForestParams = {
+          trees: thresholds.tree_count,
+          sample_size: thresholds.sample_size,
+          threshold: thresholds.threshold
+        };
+
+        isolationForestMutation.mutate(params, {
+          onSuccess: (data) => {
+            // Process results immediately when API call returns
+            processResults(data);
+          }
+        });
+      } else {
+        const params: RandomForestParams = {
+          n_trees: thresholds.tree_count,
+          max_depth: thresholds.max_tree_depth,
+          min_samples_split: thresholds.sample_size
+        };
+
+        randomForestMutation.mutate(params, {
+          onSuccess: (data) => {
+            // Process results immediately when API call returns
+            processResults(data);
+          }
+        });
+      }
+    }, 50);
   };
 
   // Handle model visualization completion
@@ -191,8 +195,8 @@ export default function Dashboard() {
 
       <Box>
         {/* Sidebar Component */}
-        <Sidebar 
-          drawerWidth={drawerWidth} 
+        <Sidebar
+          drawerWidth={drawerWidth}
           selectedModel={selectedModel}
           onModelSelect={setSelectedModel}
           onSettingsClick={() => setThresholdsOpen(true)}
@@ -200,11 +204,11 @@ export default function Dashboard() {
         />
 
         {/* Main Content */}
-        <Box 
-          component="main" 
-          sx={{ 
-            flexGrow: 1, 
-            p: 3, 
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
             background: 'transparent',
             position: 'absolute',
             top: 0,
@@ -220,7 +224,7 @@ export default function Dashboard() {
           }}
         >
           {/* Stats as pills at top left */}
-          <Box 
+          <Box
             sx={{
               position: 'absolute',
               top: 18,
@@ -270,15 +274,15 @@ export default function Dashboard() {
               flexDirection: 'column',
               gap: 2, // No gap between components - removed spacing
               width: '100%',
-              height: '100%', 
+              height: '100%',
               maxHeight: 'calc(100vh - 80px)', // Fill available height minus stats padding
               mt: '65px', // Adjusted to position below stats pills
               mb: '5px',
             }}
           >
             {/* Two graphs side by side */}
-            <Box sx={{ 
-              display: 'flex', 
+            <Box sx={{
+              display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               gap: 3, // Minimal gap between side-by-side boxes
               width: '100%',
@@ -286,8 +290,8 @@ export default function Dashboard() {
               minHeight: '0', // Allow flexible sizing
             }}>
               {/* Visualization Box */}
-              <Paper 
-                elevation={3} 
+              <Paper
+                elevation={3}
                 sx={{
                   flex: 1,
                   borderRadius: '16px',
@@ -310,25 +314,27 @@ export default function Dashboard() {
                 <Typography variant="h5" sx={{ color: 'white', mb: 1.5, fontWeight: 500 }}>
                   Visualization
                 </Typography>
-                <Box sx={{ 
-                  flex: 1, 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <Box sx={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   position: 'relative',
                   color: 'rgba(255, 255, 255, 0.7)',
-                  overflow: 'hidden' // Prevent content overflow
+                  overflow: 'hidden', // Prevent content overflow
+                  height: '100%', // Ensure full height
+                  width: '100%' // Ensure full width
                 }}>
                   {/* Conditionally render the appropriate visualization */}
                   {selectedModel === 'Isolation Forest' ? (
-                    <IsolationForestTree 
+                    <IsolationForestTree
                       ref={isolationForestRef}
                       thresholds={thresholds}
                       autoStart={isRunning}
                       onComplete={handleModelComplete}
                     />
                   ) : (
-                    <RandomForestTree 
+                    <RandomForestTree
                       ref={randomForestRef}
                       thresholds={thresholds}
                       autoStart={isRunning}
@@ -339,8 +345,8 @@ export default function Dashboard() {
               </Paper>
 
               {/* Scatter Plot Box */}
-              <Paper 
-                elevation={3} 
+              <Paper
+                elevation={3}
                 sx={{
                   flex: 1,
                   borderRadius: '16px',
@@ -363,51 +369,51 @@ export default function Dashboard() {
                 <Typography variant="h5" sx={{ color: 'white', mb: 1.5, fontWeight: 500 }}>
                   Scatter Plot
                 </Typography>
-                <Box sx={{ 
-                  flex: 1, 
-                  display: 'flex', 
+                <Box sx={{
+                  flex: 1,
+                  display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center', 
+                  alignItems: 'center',
                   justifyContent: 'center',
                   color: 'rgba(255, 255, 255, 0.7)',
                   overflow: 'hidden' // Prevent content overflow
                 }}>
                   <Box sx={{ width: '100%', height: 'calc(100% - 30px)' }}>
-                    <ScatterPlot 
-                      data={analysisResults} 
+                    <ScatterPlot
+                      data={analysisResults}
                       loading={scatterLoading}
                     />
                   </Box>
-                  
+
                   {/* Transaction type labels below chart */}
-                  <Box sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    gap: 4, 
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    gap: 4,
                     mt: 1,
                     mb: 0.5
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box sx={{ 
-                        width: 12, 
-                        height: 12, 
-                        borderRadius: '50%', 
-                        bgcolor: 'rgba(33, 150, 243, 0.7)', 
+                      <Box sx={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(33, 150, 243, 0.7)',
                         border: '1px solid rgba(33, 150, 243, 1)',
-                        mr: 1 
+                        mr: 1
                       }} />
                       <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                         Non-Fraudulent
                       </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box sx={{ 
-                        width: 12, 
-                        height: 12, 
-                        borderRadius: '50%', 
-                        bgcolor: 'rgba(255, 99, 132, 0.7)', 
+                      <Box sx={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(255, 99, 132, 0.7)',
                         border: '1px solid rgba(255, 99, 132, 1)',
-                        mr: 1 
+                        mr: 1
                       }} />
                       <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                         Fraudulent
@@ -417,10 +423,10 @@ export default function Dashboard() {
                 </Box>
               </Paper>
             </Box>
-            
+
             {/* Scrollable text box */}
-            <Paper 
-              elevation={3} 
+            <Paper
+              elevation={3}
               sx={{
                 width: '100%',
                 borderRadius: '16px',
@@ -443,8 +449,8 @@ export default function Dashboard() {
               <Typography variant="h5" sx={{ color: 'white', mb: 1.5, fontWeight: 500 }}>
                 Fraud Transactions
               </Typography>
-              <Box sx={{ 
-                flex: 1, 
+              <Box sx={{
+                flex: 1,
                 overflow: 'auto',
                 color: 'rgba(255, 255, 255, 0.7)',
                 '&::-webkit-scrollbar': {
@@ -468,11 +474,11 @@ export default function Dashboard() {
                     {analysisResults.fraud_transactions && analysisResults.fraud_transactions.length > 0 ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
                         {analysisResults.fraud_transactions.slice(0, 20).map((transaction: any, index: number) => (
-                          <Box 
+                          <Box
                             key={index}
-                            sx={{ 
-                              p: 0.75, 
-                              bgcolor: 'rgba(255,107,107,0.1)', 
+                            sx={{
+                              p: 0.75,
+                              bgcolor: 'rgba(255,107,107,0.1)',
                               borderRadius: '8px',
                               border: '1px solid rgba(255,107,107,0.2)',
                               display: 'flex',
@@ -516,9 +522,9 @@ export default function Dashboard() {
               </Box>
             </Paper>
           </Box>
-          
+
           {/* Model Settings Dialog Component */}
-          <ModelSettingsDialog 
+          <ModelSettingsDialog
             open={thresholdsOpen}
             onClose={() => setThresholdsOpen(false)}
             thresholds={thresholds}
@@ -578,7 +584,7 @@ export default function Dashboard() {
           </Box>
 
           {/* Team Dialog Component */}
-          <TeamDialog 
+          <TeamDialog
             open={teamDialogOpen}
             onClose={() => setTeamDialogOpen(false)}
             teamMembers={teamMembers}

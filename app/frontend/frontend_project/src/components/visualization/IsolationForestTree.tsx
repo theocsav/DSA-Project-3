@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
-import { Box, Typography, CircularProgress } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import TreeVisualization from './TreeVisualization';
 import { TreeVisualizationProps, COLORS, TREE_CONSTANTS } from './types';
-import { useIsolationForestAnalysis } from '../../api/queries';
 
 // Tree node structure for Isolation Forest
 interface IFTreeNode {
@@ -34,9 +33,6 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // API mutation hook
-  const isolationForestMutation = useIsolationForestAnalysis();
   
   // FIXED SEED FOR DETERMINISTIC TREE GENERATION
   const FIXED_SEED = 42;
@@ -422,9 +418,6 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
     
     if (animationActive) return;
     
-    // IMPORTANT: Removed the API call from here to prevent duplicate calls
-    // The API call now happens only in the dashboard component
-    
     setAnimationActive(true);
     setCurrentTree(1);
     setSteps(0);
@@ -485,8 +478,8 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
         // Call the onComplete callback if provided
         if (onComplete) onComplete();
       }
-    }, 400);
-  }, [animationActive, createTree, drawTree, splitNode, thresholds, onComplete, isolationForestMutation, isConnected]);
+    }, 300); // Faster animation for better visibility
+  }, [animationActive, createTree, drawTree, splitNode, thresholds, onComplete, isConnected]);
   
   // Clean up on unmount
   useEffect(() => {
@@ -499,7 +492,10 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
   // Handle animation trigger from parent via ref
   useEffect(() => {
     if (autoStart) {
-      startAnimation();
+      const timeoutId = setTimeout(() => {
+        startAnimation();
+      }, 50);
+      return () => clearTimeout(timeoutId);
     }
   }, [autoStart, startAnimation]);
 
@@ -515,8 +511,7 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        // Reduced dimensions matching TreeVisualization
-        height: '280px',
+        height: '100%',
         overflow: 'hidden'
       }}>
         <canvas 
@@ -524,13 +519,11 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
           style={{ 
             width: '100%', 
             height: '100%', 
-            display: 'block',
-            // Ensure canvas doesn't grow too large
-            maxHeight: '280px'
+            display: 'block'
           }}
         />
         
-        {!animationActive && progress === 0 && (
+        {!animationActive && progress === 0 && !isConnected && (
           <Box 
             sx={{ 
               position: 'absolute',
@@ -545,37 +538,10 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
               backgroundColor: 'rgba(0, 0, 0, 0.4)',
               borderRadius: '8px'
             }}
-            onClick={startAnimation}
           >
-            {!isConnected ? (
-              <Typography variant="subtitle1" color="error" sx={{ textAlign: 'center', px: 3 }}>
-                Database connection failed or no data available.<br/>
-                Please ensure backend server is running and data is loaded.
-              </Typography>
-            ) : (
-              <Typography variant="subtitle1" color="white">
-                Click to visualize Isolation Forest
-              </Typography>
-            )}
-          </Box>
-        )}
-        
-        {animationActive && (
-          <Box 
-            sx={{ 
-              position: 'absolute',
-              top: 10,
-              right: 10,
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              borderRadius: '16px',
-              padding: '4px 8px'
-            }}
-          >
-            <CircularProgress size={16} sx={{ mr: 1, color: 'white' }} />
-            <Typography variant="caption" color="white">
-              {progress}%
+            <Typography variant="subtitle1" color="error" sx={{ textAlign: 'center', px: 3 }}>
+              Database connection failed or no data available.<br/>
+              Please ensure backend server is running and data is loaded.
             </Typography>
           </Box>
         )}
