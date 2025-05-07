@@ -188,7 +188,7 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
     ctx.clearRect(0, 0, displayWidth, displayHeight);
     
     // Fill with background color
-    ctx.fillStyle = 'rgb(30, 30, 60)';
+    ctx.fillStyle = 'rgba(30, 30, 60, 0.95)';
     ctx.fillRect(0, 0, displayWidth, displayHeight);
     
     // Calculate scale to fit the tree in the canvas

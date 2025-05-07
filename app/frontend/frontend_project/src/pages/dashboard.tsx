@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, CssBaseline, GlobalStyles, IconButton, Tooltip, Typography, Paper, Tabs, Tab } from '@mui/material';
+import { Box, CssBaseline, GlobalStyles, IconButton, Tooltip, Typography, Paper, Tabs, Tab, Modal, Button, Fade } from '@mui/material';
 
 // Material UI Icons
 import CloseIcon from '@mui/icons-material/Close';
@@ -14,6 +14,7 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import Settings from '@mui/icons-material/Settings';
 import PlayArrow from '@mui/icons-material/PlayArrow';
+import InfoIcon from '@mui/icons-material/Info';
 
 // Import our custom components
 import Sidebar from '../components/dashboard/Sidebar';
@@ -727,6 +728,9 @@ export default function Dashboard() {
   // New state for sidebar and visualization zoom
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [visualizationZoom, setVisualizationZoom] = useState(1.2); // Starting with a slight zoom
+  
+  // New state for instructions popup
+  const [instructionsOpen, setInstructionsOpen] = useState(true);
 
   // API mutation hooks
   const isolationForestMutation = useIsolationForestAnalysis();
@@ -899,6 +903,146 @@ export default function Dashboard() {
         }}
       />
 
+      {/* Instructions Modal */}
+      <Modal
+        open={instructionsOpen}
+        onClose={() => setInstructionsOpen(false)}
+        aria-labelledby="instructions-modal-title"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <Fade in={instructionsOpen}>
+          <Paper
+            elevation={4}
+            sx={{
+              width: '90%',
+              maxWidth: '650px',
+              bgcolor: 'rgba(30, 30, 60, 0.95)',
+              border: '1px solid rgba(33, 150, 243, 0.4)',
+              borderRadius: '16px',
+              p: 4,
+              backdropFilter: 'blur(8px)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+              outline: 'none',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <InfoIcon sx={{ color: '#2196F3', mr: 2, fontSize: 28 }} />
+              <Typography id="instructions-modal-title" variant="h5" sx={{ color: 'white', fontWeight: 500 }}>
+                Welcome to the Fraud Detection Dashboard
+              </Typography>
+            </Box>
+            
+            <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 3 }}>
+              Get started by following these simple steps:
+            </Typography>
+
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
+                1. Choose a Detection Algorithm
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 2 }}>
+                Select either Random Forest (supervised) or Isolation Forest (unsupervised) from the sidebar.
+              </Typography>
+
+              <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
+                2. Adjust Model Parameters (Optional)
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 2 }}>
+                Click the settings icon to customize tree count, sample size, and other parameters.
+              </Typography>
+
+              <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
+                3. Run the Analysis
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 3 }}>
+                Click "RUN MODEL" to analyze the transaction data and detect potential fraud.
+              </Typography>
+            </Box>
+
+            <Box sx={{
+              bgcolor: 'rgba(33, 150, 243, 0.1)',
+              border: '1px solid rgba(33, 150, 243, 0.3)',
+              borderRadius: '8px',
+              p: 2,
+              mb: 3
+            }}>
+              <Typography variant="h6" sx={{ color: '#2196F3', mb: 1 }}>
+                Algorithm Comparison
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 1 }}>
+                <strong>Random Forest:</strong> Supervised learning model for high accuracy with labeled data
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                <strong>Isolation Forest:</strong> Unsupervised learning model for anomaly detection without labels
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button 
+                variant="contained" 
+                onClick={() => setInstructionsOpen(false)}
+                sx={{
+                  backgroundColor: '#2196F3',
+                  '&:hover': {
+                    backgroundColor: '#1976d2',
+                  },
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                  px: 3
+                }}
+              >
+                Got it
+              </Button>
+            </Box>
+          </Paper>
+        </Fade>
+      </Modal>
+
+      {/* Pill-style analyzing indicator at bottom right */}
+      {isAnalyzing && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+            zIndex: 1500,
+            display: 'flex',
+            alignItems: 'center',
+            bgcolor: 'rgba(30, 30, 60, 0.9)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(187, 134, 252, 0.3)',
+            borderRadius: '30px',
+            px: 2,
+            py: 1.2,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+            animation: 'fadeIn 0.3s ease-in-out',
+          }}
+        >
+          <Box
+            sx={{
+              width: 12,
+              height: 12,
+              borderRadius: '50%',
+              bgcolor: '#bb86fc',
+              mr: 1.5,
+              animation: 'pulse 1.5s infinite ease-in-out',
+              '@keyframes pulse': {
+                '0%': { opacity: 0.4, transform: 'scale(0.8)' },
+                '50%': { opacity: 1, transform: 'scale(1.2)' },
+                '100%': { opacity: 0.4, transform: 'scale(0.8)' },
+              },
+            }}
+          />
+          <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+            Analyzing with {selectedModel}...
+          </Typography>
+        </Box>
+      )}
+
       <Box>
         {/* Conditional rendering of sidebar or mini sidebar */}
         {sidebarOpen ? (
@@ -981,41 +1125,7 @@ export default function Dashboard() {
               pb: 3, // Add padding at the bottom for scrolling
             }}
           >
-            {/* Status indicator for analyzing state */}
-            {isAnalyzing && (
-              <Paper
-                elevation={3}
-                sx={{
-                  p: 2,
-                  borderRadius: '16px',
-                  background: 'rgba(30, 30, 60, 0.8)',
-                  border: '1px solid rgba(187, 134, 252, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: '50%',
-                    bgcolor: '#bb86fc',
-                    mr: 2,
-                    animation: 'pulse 1.5s infinite ease-in-out',
-                    '@keyframes pulse': {
-                      '0%': { opacity: 0.4, transform: 'scale(0.8)' },
-                      '50%': { opacity: 1, transform: 'scale(1.2)' },
-                      '100%': { opacity: 0.4, transform: 'scale(0.8)' },
-                    },
-                  }}
-                />
-                <Typography variant="subtitle1" sx={{ color: 'white' }}>
-                  Analyzing data with {selectedModel}...
-                </Typography>
-              </Paper>
-            )}
+            
 
             {/* Two graphs side by side */}
             <Box sx={{
@@ -1085,7 +1195,7 @@ export default function Dashboard() {
                   </Box>
                 </Box>
                 
-                {/* Visualization with zoom applied */}
+                {/* Visualization with zoom and drag functionality applied */}
                 <Box sx={{
                   flex: 1,
                   display: 'flex',
@@ -1096,13 +1206,58 @@ export default function Dashboard() {
                   overflow: 'hidden',
                   height: '100%',
                   width: '100%',
+                  cursor: 'grab',
+                  '&:active': {
+                    cursor: 'grabbing',
+                  }
                 }}>
-                  <Box sx={{
-                    width: '100%',
-                    height: '100%',
-                    transform: `scale(${visualizationZoom})`,
-                    transition: 'transform 0.3s ease',
-                  }}>
+                  
+                  {/* Visualization content with pan/drag functionality */}
+                  <Box 
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      transform: `scale(${visualizationZoom})`,
+                      transition: 'transform 0.3s ease',
+                    }}
+                    onMouseDown={(e) => {
+                      // Enable dragging only if left mouse button is pressed
+                      if (e.button !== 0) return;
+                      
+                      const container = e.currentTarget.parentElement;
+                      if (!container) return;
+                      
+                      // Get initial mouse position
+                      const startX = e.clientX;
+                      const startY = e.clientY;
+                      
+                      // Get initial scroll position
+                      const scrollLeft = container.scrollLeft;
+                      const scrollTop = container.scrollTop;
+                      
+                      // Handle mouse move
+                      const handleMouseMove = (e: MouseEvent) => {
+                        // Calculate how far the mouse has moved
+                        const dx = e.clientX - startX;
+                        const dy = e.clientY - startY;
+                        
+                        // Scroll the container
+                        container.scrollLeft = scrollLeft - dx;
+                        container.scrollTop = scrollTop - dy;
+                      };
+                      
+                      // Handle mouse up
+                      const handleMouseUp = () => {
+                        // Remove event listeners
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      // Add event listeners for mouse move and mouse up
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  >
                     {selectedModel === 'Isolation Forest' ? (
                       <IsolationForestTree
                         ref={isolationForestRef}
@@ -1296,7 +1451,7 @@ export default function Dashboard() {
               </Paper>
             )}
 
-            {/* Instructions when no analysis has been run */}
+            {/* Results placeholder when no analysis has been run */}
             {!analysisResults && !isAnalyzing && (
               <Paper
                 elevation={3}
@@ -1312,31 +1467,23 @@ export default function Dashboard() {
                   justifyContent: 'center',
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
                   backdropFilter: 'blur(8px)',
-                  minHeight: '300px',
+                  transition: 'box-shadow 0.2s ease-in-out',
+                  minHeight: '400px',
+                  '&:hover': {
+                    boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
+                  }
                 }}
               >
-                <Typography variant="h5" sx={{ color: 'white', mb: 2 }}>
-                  Welcome to the Fraud Detection Dashboard
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 3, textAlign: 'center', maxWidth: '600px' }}>
-                  Select your preferred model and click "RUN MODEL" in the sidebar to start analysis.
-                  After processing, detailed metrics and visualizations will appear here.
-                </Typography>
-                <Box sx={{
-                  bgcolor: 'rgba(33, 150, 243, 0.1)',
-                  border: '1px solid rgba(33, 150, 243, 0.3)',
-                  borderRadius: '8px',
-                  p: 2,
-                  maxWidth: '500px',
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  textAlign: 'center',
+                  maxWidth: '600px'
                 }}>
-                  <Typography variant="h6" sx={{ color: '#2196F3', mb: 1 }}>
-                    Algorithm Comparison
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 1 }}>
-                    <strong>Random Forest:</strong> Supervised learning model for high accuracy with labeled data
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                    <strong>Isolation Forest:</strong> Unsupervised learning model for anomaly detection without labels
+                  <AssessmentIcon sx={{ fontSize: 60, color: 'rgba(33, 150, 243, 0.7)', mb: 3 }} />
+                  <Typography variant="h4" sx={{ color: 'white', mb: 2, fontWeight: 500 }}>
+                    Results Will Appear Here
                   </Typography>
                 </Box>
               </Paper>
@@ -1351,56 +1498,75 @@ export default function Dashboard() {
             handleThresholdsChange={handleThresholdsChange}
           />
 
-          {/* Header Action Icons */}
+          {/* Header Action Icons - Enhanced with Team Credits */}
           <Box
             sx={{
-              position: 'absolute',
+              position: 'fixed',
               top: 18,
               right: 20,
               display: 'flex',
               gap: 2,
-              zIndex: 1100,
+              zIndex: 1500,
               alignItems: 'center',
               height: 40,
+              backgroundColor: 'rgba(30, 30, 60, 0.7)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: '30px',
+              padding: '0 16px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
             }}
           >
-            {[
-              { title: "Team Credits", icon: <GroupIcon />, onClick: () => setTeamDialogOpen(true), hoverColor: "rgba(33, 150, 243, 0.2)", color: "#2196F3" },
-              { title: "Exit", icon: <CloseIcon />, onClick: () => window.location.href = '/', hoverColor: "rgba(255, 107, 107, 0.2)", color: "#ff6b6b" }
-            ].map((action) => (
-              <Box
-                key={action.title}
+            <Typography variant="body2" sx={{ 
+              color: 'rgba(255, 255, 255, 0.8)', 
+              fontWeight: 500, 
+              display: {xs: 'none', sm: 'block'} 
+            }}>
+              Fraud Detection System v1.0
+            </Typography>
+            <Divider orientation="vertical" flexItem sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              display: {xs: 'none', sm: 'block'}
+            }} />
+            <Tooltip title="Team Credits">
+              <IconButton
+                onClick={() => setTeamDialogOpen(true)}
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  borderRadius: '20px',
-                  backgroundColor: `${action.color}15`,
-                  backdropFilter: 'blur(10px)',
-                  border: `1px solid ${action.color}30`,
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                  transition: 'transform 0.2s ease',
-                  height: 40,
+                  color: "#2196F3",
                   '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 6px 10px rgba(0, 0, 0, 0.15)',
-                  },
+                    backgroundColor: "rgba(33, 150, 243, 0.2)"
+                  }
                 }}
               >
-                <Tooltip title={action.title}>
-                  <IconButton
-                    onClick={action.onClick}
-                    sx={{
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                      },
-                    }}
-                  >
-                    {action.icon}
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            ))}
+                <GroupIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="View Instructions">
+              <IconButton
+                onClick={() => setInstructionsOpen(true)}
+                sx={{
+                  color: "rgba(255, 255, 255, 0.8)",
+                  '&:hover': {
+                    backgroundColor: "rgba(255, 255, 255, 0.1)"
+                  }
+                }}
+              >
+                <InfoIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Return to Homepage">
+              <IconButton
+                onClick={() => window.location.href = '/'}
+                sx={{
+                  color: "rgba(255, 107, 107, 0.9)",
+                  '&:hover': {
+                    backgroundColor: "rgba(255, 107, 107, 0.2)"
+                  }
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Tooltip>
           </Box>
 
           {/* Team Dialog Component */}
@@ -1409,6 +1575,105 @@ export default function Dashboard() {
             onClose={() => setTeamDialogOpen(false)}
             teamMembers={teamMembers}
           />
+
+          {/* Instructions Modal */}
+          <Modal
+            open={instructionsOpen}
+            onClose={() => setInstructionsOpen(false)}
+            aria-labelledby="instructions-modal-title"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Fade in={instructionsOpen}>
+              <Paper
+                elevation={4}
+                sx={{
+                  width: '90%',
+                  maxWidth: '650px',
+                  bgcolor: 'rgba(30, 30, 60, 0.95)',
+                  border: '1px solid rgba(33, 150, 243, 0.4)',
+                  borderRadius: '16px',
+                  p: 4,
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                  outline: 'none',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <InfoIcon sx={{ color: '#2196F3', mr: 2, fontSize: 28 }} />
+                  <Typography id="instructions-modal-title" variant="h5" sx={{ color: 'white', fontWeight: 500 }}>
+                    Welcome to the Fraud Detection Dashboard
+                  </Typography>
+                </Box>
+                
+                <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 3 }}>
+                  Get started by following these simple steps:
+                </Typography>
+
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
+                    1. Choose a Detection Algorithm
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 2 }}>
+                    Select either Random Forest (supervised) or Isolation Forest (unsupervised) from the sidebar.
+                  </Typography>
+
+                  <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
+                    2. Adjust Model Parameters (Optional)
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 2 }}>
+                    Click the settings icon to customize tree count, sample size, and other parameters.
+                  </Typography>
+
+                  <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
+                    3. Run the Analysis
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 3 }}>
+                    Click "RUN MODEL" to analyze the transaction data and detect potential fraud.
+                  </Typography>
+                </Box>
+
+                <Box sx={{
+                  bgcolor: 'rgba(33, 150, 243, 0.1)',
+                  border: '1px solid rgba(33, 150, 243, 0.3)',
+                  borderRadius: '8px',
+                  p: 2,
+                  mb: 3
+                }}>
+                  <Typography variant="h6" sx={{ color: '#2196F3', mb: 1 }}>
+                    Algorithm Comparison
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 1 }}>
+                    <strong>Random Forest:</strong> Supervised learning model for high accuracy with labeled data
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <strong>Isolation Forest:</strong> Unsupervised learning model for anomaly detection without labels
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => setInstructionsOpen(false)}
+                    sx={{
+                      backgroundColor: '#2196F3',
+                      '&:hover': {
+                        backgroundColor: '#1976d2',
+                      },
+                      textTransform: 'none',
+                      fontWeight: 'bold',
+                      px: 3
+                    }}
+                  >
+                    Got it
+                  </Button>
+                </Box>
+              </Paper>
+            </Fade>
+          </Modal>
         </Box>
       </Box>
     </>

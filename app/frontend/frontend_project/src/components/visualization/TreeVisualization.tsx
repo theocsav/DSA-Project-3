@@ -46,8 +46,12 @@ const TreeVisualization: React.FC<TreeVisualizationComponentProps> = ({
         {children}
       </Box>
       
-      {/* Legend at the bottom */}
+      {/* Legend at the bottom - Adding position absolute to keep it fixed regardless of zoom */}
       <Box sx={{ 
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         display: 'flex',
         justifyContent: 'center',
         p: 1,
@@ -58,6 +62,7 @@ const TreeVisualization: React.FC<TreeVisualizationComponentProps> = ({
         minHeight: '40px', // Ensure minimum height
         maxHeight: '40px', // Ensure maximum height
         flexShrink: 0, // Prevent shrinking
+        zIndex: 10, // Ensure legend stays on top
       }}>
         <Legend />
       </Box>
