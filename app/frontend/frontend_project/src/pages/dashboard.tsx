@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, CssBaseline, GlobalStyles, IconButton, Tooltip, Typography, Paper, Tabs, Tab, Modal, Button, Fade } from '@mui/material';
+import { Box, CssBaseline, GlobalStyles, IconButton, Tooltip, Typography, Paper, Tabs, Tab, Modal, Button, Fade, CircularProgress, Divider } from '@mui/material';
 
 // Material UI Icons
 import CloseIcon from '@mui/icons-material/Close';
@@ -14,12 +14,13 @@ import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import Settings from '@mui/icons-material/Settings';
 import PlayArrow from '@mui/icons-material/PlayArrow';
-import InfoIcon from '@mui/icons-material/Info';
+import InfoIcon from '@mui/icons-material/InfoOutlined';
 
 // Import our custom components
-import Sidebar from '../components/dashboard/Sidebar';
-import ModelSettingsDialog from '../components/dashboard/ModelSettingsDialog';
-import TeamDialog from '../components/dashboard/TeamDialog';
+import Sidebar from '../components/Dashboard/Sidebar';
+import ModelSettingsDialog from '../components/Dashboard/ModelSettingsDialog';
+import TeamDialog from '../components/Dashboard/TeamDialog';
+import TransactionTimeline from '../components/Dashboard/TransactionTimeline';
 import { TeamMember } from '../components/TeamMemberCard';
 import { commonStyles, animations } from '../styles/common';
 import { AnalysisResult, IsolationForestParams, RandomForestParams } from '../api/types';
@@ -29,9 +30,6 @@ import { useIsolationForestAnalysis, useRandomForestAnalysis } from '../api/quer
 import IsolationForestTree from '../components/visualization/IsolationForestTree';
 import RandomForestTree from '../components/visualization/RandomForestTree';
 import ScatterPlot from '../components/visualization/ScatterPlot';
-
-// --- Missing Components Import ---
-import { CircularProgress, Divider } from '@mui/material';
 
 // Constants
 const drawerWidth = 240;
@@ -62,10 +60,10 @@ const TransactionsPanel: React.FC<TransactionsPanelProps> = ({ data, isLoading }
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
       <Typography variant="subtitle2" sx={{ mb: 1, color: 'rgba(255,255,255,0.8)' }}>
-        Showing {Math.min(20, data.fraud_transactions?.length || 0)} of {data.fraud_transactions?.length || 0} fraud transactions 
+        Showing {Math.min(20, data.fraud_transactions?.length || 0)} of {data.fraud_transactions?.length || 0} fraud transactions
         ({data.fraud_count ? ((data.fraud_count / data.data_points) * 100).toFixed(1) : 'N/A'}% of total)
       </Typography>
-      
+
       {data.fraud_transactions && data.fraud_transactions.length > 0 ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.2 }}>
           {data.fraud_transactions.slice(0, 20).map((transaction: Transaction, index: number) => (
@@ -175,120 +173,120 @@ const MetricsPanel: React.FC<MetricsPanelProps> = ({ data, isLoading, selectedMo
           Performance Metrics
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3 }}>
-          <MetricCard 
-            label="Accuracy" 
-            value={`${(data.accuracy * 100).toFixed(1)}%`} 
+          <MetricCard
+            label="Accuracy"
+            value={`${(data.accuracy * 100).toFixed(1)}%`}
             description="Percentage of correct predictions"
           />
-          <MetricCard 
-            label="Precision" 
-            value={`${(data.precision * 100).toFixed(1)}%`} 
+          <MetricCard
+            label="Precision"
+            value={`${(data.precision * 100).toFixed(1)}%`}
             description="True positives / (True positives + False positives)"
           />
-          <MetricCard 
-            label="Recall" 
-            value={`${(data.recall * 100).toFixed(1)}%`} 
+          <MetricCard
+            label="Recall"
+            value={`${(data.recall * 100).toFixed(1)}%`}
             description="True positives / (True positives + False negatives)"
           />
-          <MetricCard 
-            label="F1 Score" 
-            value={data.f1_score.toFixed(2)} 
+          <MetricCard
+            label="F1 Score"
+            value={data.f1_score.toFixed(2)}
             description="Harmonic mean of precision and recall"
           />
         </Box>
       </Box>
-      
+
       <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-      
+
       {/* Model Parameters Section */}
       <Box>
         <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
           Model Parameters
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3 }}>
-          <MetricCard 
-            label="Algorithm" 
-            value={data.algorithm || selectedModel} 
+          <MetricCard
+            label="Algorithm"
+            value={data.algorithm || selectedModel}
             description="Detection method used"
           />
-          <MetricCard 
-            label={selectedModel === 'Isolation Forest' ? 'Tree Count' : 'Number of Trees'} 
-            value={data.parameters?.tree_count || data.parameters?.n_trees || thresholds.tree_count} 
+          <MetricCard
+            label={selectedModel === 'Isolation Forest' ? 'Tree Count' : 'Number of Trees'}
+            value={data.parameters?.tree_count || data.parameters?.n_trees || thresholds.tree_count}
             description="Number of trees in the ensemble"
           />
-          <MetricCard 
-            label="Sample Size" 
-            value={data.parameters?.sample_size || data.parameters?.min_samples_split || thresholds.sample_size} 
+          <MetricCard
+            label="Sample Size"
+            value={data.parameters?.sample_size || data.parameters?.min_samples_split || thresholds.sample_size}
             description={selectedModel === 'Isolation Forest' ? "Samples per tree" : "Min samples to split a node"}
           />
-          <MetricCard 
-            label={selectedModel === 'Isolation Forest' ? 'Threshold' : 'Max Depth'} 
-            value={selectedModel === 'Isolation Forest' 
-              ? data.parameters?.threshold || thresholds.threshold 
+          <MetricCard
+            label={selectedModel === 'Isolation Forest' ? 'Threshold' : 'Max Depth'}
+            value={selectedModel === 'Isolation Forest'
+              ? data.parameters?.threshold || thresholds.threshold
               : data.parameters?.max_depth || thresholds.max_tree_depth
-            } 
+            }
             description={selectedModel === 'Isolation Forest' ? "Classification boundary" : "Maximum tree depth"}
           />
         </Box>
       </Box>
-      
+
       <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-      
+
       {/* Execution Details */}
       <Box>
         <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
           Execution Details
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3 }}>
-          <MetricCard 
-            label="Execution Time" 
-            value={`${data.execution_time.toFixed(2)}s`} 
+          <MetricCard
+            label="Execution Time"
+            value={`${data.execution_time.toFixed(2)}s`}
             description="Total processing time"
           />
-          <MetricCard 
-            label="Data Points" 
-            value={data.data_points.toLocaleString()} 
+          <MetricCard
+            label="Data Points"
+            value={data.data_points.toLocaleString()}
             description="Total transactions analyzed"
           />
-          <MetricCard 
-            label="Fraud Count" 
-            value={(data.fraud_count || data.fraud_transactions?.length || 0).toLocaleString()} 
+          <MetricCard
+            label="Fraud Count"
+            value={(data.fraud_count || data.fraud_transactions?.length || 0).toLocaleString()}
             description="Transactions classified as fraud"
           />
-          <MetricCard 
-            label="Data Structure" 
-            value={data.data_structure || "Binary Trees"} 
+          <MetricCard
+            label="Data Structure"
+            value={data.data_structure || "Binary Trees"}
             description="Underlying model structure"
           />
         </Box>
       </Box>
-      
+
       {/* Extended Metrics Section - More Advanced Metrics */}
       <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.1)' }} />
-      
+
       <Box>
         <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
           Advanced Metrics
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3 }}>
-          <MetricCard 
-            label="False Positive Rate" 
-            value={`${((data.confusion_matrix.false_positives / (data.confusion_matrix.false_positives + data.confusion_matrix.true_negatives)) * 100).toFixed(2)}%`} 
+          <MetricCard
+            label="False Positive Rate"
+            value={`${((data.confusion_matrix.false_positives / (data.confusion_matrix.false_positives + data.confusion_matrix.true_negatives)) * 100).toFixed(2)}%`}
             description="False positives / (False positives + True negatives)"
           />
-          <MetricCard 
-            label="False Negative Rate" 
-            value={`${((data.confusion_matrix.false_negatives / (data.confusion_matrix.false_negatives + data.confusion_matrix.true_positives)) * 100).toFixed(2)}%`} 
+          <MetricCard
+            label="False Negative Rate"
+            value={`${((data.confusion_matrix.false_negatives / (data.confusion_matrix.false_negatives + data.confusion_matrix.true_positives)) * 100).toFixed(2)}%`}
             description="False negatives / (False negatives + True positives)"
           />
-          <MetricCard 
-            label="True Positive Rate" 
-            value={`${(data.recall * 100).toFixed(2)}%`} 
+          <MetricCard
+            label="True Positive Rate"
+            value={`${(data.recall * 100).toFixed(2)}%`}
             description="Same as Recall"
           />
-          <MetricCard 
-            label="True Negative Rate" 
-            value={`${((data.confusion_matrix.true_negatives / (data.confusion_matrix.true_negatives + data.confusion_matrix.false_positives)) * 100).toFixed(2)}%`} 
+          <MetricCard
+            label="True Negative Rate"
+            value={`${((data.confusion_matrix.true_negatives / (data.confusion_matrix.true_negatives + data.confusion_matrix.false_positives)) * 100).toFixed(2)}%`}
             description="True negatives / (True negatives + False positives)"
           />
         </Box>
@@ -305,18 +303,18 @@ interface RateBoxProps {
 }
 
 const RateBox: React.FC<RateBoxProps> = ({ label, value, goodValue }) => (
-  <Box sx={{ 
+  <Box sx={{
     textAlign: 'center',
     minWidth: '120px'
   }}>
     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
       {label}
     </Typography>
-    <Typography 
-      variant="body1" 
-      sx={{ 
-        fontWeight: 'bold', 
-        color: goodValue 
+    <Typography
+      variant="body1"
+      sx={{
+        fontWeight: 'bold',
+        color: goodValue
           ? 'rgba(0,230,118,0.9)'  // Green for good values 
           : 'rgba(255,107,107,0.9)' // Red for bad values
       }}
@@ -342,44 +340,44 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
   }
 
   // Calculate percentages for cell labels
-  const total = data.confusion_matrix.true_positives + 
-                data.confusion_matrix.false_positives + 
-                data.confusion_matrix.false_negatives + 
-                data.confusion_matrix.true_negatives;
-                
+  const total = data.confusion_matrix.true_positives +
+    data.confusion_matrix.false_positives +
+    data.confusion_matrix.false_negatives +
+    data.confusion_matrix.true_negatives;
+
   const tpPercent = ((data.confusion_matrix.true_positives / total) * 100).toFixed(1);
   const fpPercent = ((data.confusion_matrix.false_positives / total) * 100).toFixed(1);
   const fnPercent = ((data.confusion_matrix.false_negatives / total) * 100).toFixed(1);
   const tnPercent = ((data.confusion_matrix.true_negatives / total) * 100).toFixed(1);
 
   // Calculate performance rates
-  const falsePositiveRate = ((data.confusion_matrix.false_positives / 
+  const falsePositiveRate = ((data.confusion_matrix.false_positives /
     (data.confusion_matrix.false_positives + data.confusion_matrix.true_negatives)) * 100).toFixed(2);
-  
-  const falseNegativeRate = ((data.confusion_matrix.false_negatives / 
+
+  const falseNegativeRate = ((data.confusion_matrix.false_negatives /
     (data.confusion_matrix.false_negatives + data.confusion_matrix.true_positives)) * 100).toFixed(2);
-  
-  const truePositiveRate = ((data.confusion_matrix.true_positives / 
+
+  const truePositiveRate = ((data.confusion_matrix.true_positives /
     (data.confusion_matrix.true_positives + data.confusion_matrix.false_negatives)) * 100).toFixed(2);
-  
-  const trueNegativeRate = ((data.confusion_matrix.true_negatives / 
+
+  const trueNegativeRate = ((data.confusion_matrix.true_negatives /
     (data.confusion_matrix.true_negatives + data.confusion_matrix.false_positives)) * 100).toFixed(2);
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       gap: 2
     }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
         Confusion Matrix
       </Typography>
-      
+
       {/* Matrix Visualization */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         p: 2,
         maxWidth: '100%',
@@ -388,18 +386,18 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
         {/* Matrix Headers */}
         <Box sx={{ display: 'flex', mb: 1 }}>
           <Box sx={{ width: 120 }}></Box>
-          <Box sx={{ 
-            width: 120, 
-            textAlign: 'center', 
+          <Box sx={{
+            width: 120,
+            textAlign: 'center',
             fontWeight: 'bold',
             color: 'rgba(255,255,255,0.8)',
             fontSize: '0.875rem'
           }}>
             Predicted Fraud
           </Box>
-          <Box sx={{ 
-            width: 120, 
-            textAlign: 'center', 
+          <Box sx={{
+            width: 120,
+            textAlign: 'center',
             fontWeight: 'bold',
             color: 'rgba(255,255,255,0.8)',
             fontSize: '0.875rem'
@@ -407,13 +405,13 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
             Predicted Normal
           </Box>
         </Box>
-        
+
         {/* First Row - True Positives & False Negatives */}
         <Box sx={{ display: 'flex' }}>
-          <Box sx={{ 
-            width: 120, 
-            display: 'flex', 
-            alignItems: 'center', 
+          <Box sx={{
+            width: 120,
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'flex-end',
             pr: 2,
             fontWeight: 'bold',
@@ -422,12 +420,12 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
           }}>
             Actual Fraud
           </Box>
-          
+
           {/* True Positives Cell */}
-          <Box sx={{ 
-            width: 120, 
-            height: 100, 
-            bgcolor: 'rgba(0,230,118,0.2)', 
+          <Box sx={{
+            width: 120,
+            height: 100,
+            bgcolor: 'rgba(0,230,118,0.2)',
             border: '1px solid rgba(0,230,118,0.4)',
             display: 'flex',
             flexDirection: 'column',
@@ -445,12 +443,12 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
               {tpPercent}%
             </Typography>
           </Box>
-          
+
           {/* False Negatives Cell */}
-          <Box sx={{ 
-            width: 120, 
-            height: 100, 
-            bgcolor: 'rgba(255,107,107,0.2)', 
+          <Box sx={{
+            width: 120,
+            height: 100,
+            bgcolor: 'rgba(255,107,107,0.2)',
             border: '1px solid rgba(255,107,107,0.4)',
             display: 'flex',
             flexDirection: 'column',
@@ -469,13 +467,13 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
             </Typography>
           </Box>
         </Box>
-        
+
         {/* Second Row - False Positives & True Negatives */}
         <Box sx={{ display: 'flex' }}>
-          <Box sx={{ 
-            width: 120, 
-            display: 'flex', 
-            alignItems: 'center', 
+          <Box sx={{
+            width: 120,
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'flex-end',
             pr: 2,
             fontWeight: 'bold',
@@ -484,12 +482,12 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
           }}>
             Actual Normal
           </Box>
-          
+
           {/* False Positives Cell */}
-          <Box sx={{ 
-            width: 120, 
-            height: 100, 
-            bgcolor: 'rgba(255,107,107,0.2)', 
+          <Box sx={{
+            width: 120,
+            height: 100,
+            bgcolor: 'rgba(255,107,107,0.2)',
             border: '1px solid rgba(255,107,107,0.4)',
             display: 'flex',
             flexDirection: 'column',
@@ -507,12 +505,12 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
               {fpPercent}%
             </Typography>
           </Box>
-          
+
           {/* True Negatives Cell */}
-          <Box sx={{ 
-            width: 120, 
-            height: 100, 
-            bgcolor: 'rgba(0,230,118,0.2)', 
+          <Box sx={{
+            width: 120,
+            height: 100,
+            bgcolor: 'rgba(0,230,118,0.2)',
             border: '1px solid rgba(0,230,118,0.4)',
             display: 'flex',
             flexDirection: 'column',
@@ -532,11 +530,11 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
           </Box>
         </Box>
       </Box>
-      
+
       {/* Explanation of terms */}
-      <Box sx={{ 
-        width: '100%', 
-        bgcolor: 'rgba(30, 30, 70, 0.5)', 
+      <Box sx={{
+        width: '100%',
+        bgcolor: 'rgba(30, 30, 70, 0.5)',
         borderRadius: '8px',
         p: 2,
         mt: 2
@@ -544,39 +542,39 @@ const ConfusionMatrixPanel: React.FC<ConfusionMatrixPanelProps> = ({ data, isLoa
         <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.9)', mb: 1 }}>
           Model Performance Rates
         </Typography>
-        <Box sx={{ 
-          display: 'flex', 
+        <Box sx={{
+          display: 'flex',
           flexWrap: 'wrap',
           gap: 3,
           justifyContent: 'space-around',
         }}>
-          <RateBox 
-            label="True Positive Rate (Recall)" 
-            value={`${truePositiveRate}%`} 
-            goodValue={true} 
+          <RateBox
+            label="True Positive Rate (Recall)"
+            value={`${truePositiveRate}%`}
+            goodValue={true}
           />
-          <RateBox 
-            label="True Negative Rate (Specificity)" 
-            value={`${trueNegativeRate}%`} 
-            goodValue={true} 
+          <RateBox
+            label="True Negative Rate (Specificity)"
+            value={`${trueNegativeRate}%`}
+            goodValue={true}
           />
-          <RateBox 
-            label="False Positive Rate" 
-            value={`${falsePositiveRate}%`} 
-            goodValue={false} 
+          <RateBox
+            label="False Positive Rate"
+            value={`${falsePositiveRate}%`}
+            goodValue={false}
           />
-          <RateBox 
-            label="False Negative Rate" 
-            value={`${falseNegativeRate}%`} 
-            goodValue={false} 
+          <RateBox
+            label="False Negative Rate"
+            value={`${falseNegativeRate}%`}
+            goodValue={false}
           />
         </Box>
       </Box>
-      
+
       {/* Explanation of confusion matrix */}
-      <Box sx={{ 
-        width: '100%', 
-        bgcolor: 'rgba(30, 30, 70, 0.5)', 
+      <Box sx={{
+        width: '100%',
+        bgcolor: 'rgba(30, 30, 70, 0.5)',
         borderRadius: '8px',
         p: 2,
         mt: 2
@@ -639,7 +637,7 @@ const MiniSidebar: React.FC<{
       >
         <ChevronRightIcon />
       </IconButton>
-      
+
       <Tooltip title="Run Model" placement="right">
         <IconButton
           onClick={onRunModel}
@@ -656,10 +654,10 @@ const MiniSidebar: React.FC<{
           <PlayArrow />
         </IconButton>
       </Tooltip>
-      
+
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
         <Tooltip title="Random Forest" placement="right">
-          <IconButton 
+          <IconButton
             onClick={() => onModelSelect('Random Forest')}
             sx={{
               color: selectedModel === 'Random Forest' ? '#fff' : 'rgba(255, 255, 255, 0.5)',
@@ -672,9 +670,9 @@ const MiniSidebar: React.FC<{
             <Box sx={{ fontSize: '10px', fontWeight: 'bold' }}>RF</Box>
           </IconButton>
         </Tooltip>
-        
+
         <Tooltip title="Isolation Forest" placement="right">
-          <IconButton 
+          <IconButton
             onClick={() => onModelSelect('Isolation Forest')}
             sx={{
               color: selectedModel === 'Isolation Forest' ? '#fff' : 'rgba(255, 255, 255, 0.5)',
@@ -688,7 +686,7 @@ const MiniSidebar: React.FC<{
           </IconButton>
         </Tooltip>
       </Box>
-      
+
       <Tooltip title="Settings" placement="right">
         <IconButton
           onClick={onSettingsClick}
@@ -724,11 +722,11 @@ export default function Dashboard() {
   const [scatterLoading, setScatterLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
+
   // New state for sidebar and visualization zoom
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [visualizationZoom, setVisualizationZoom] = useState(1.2); // Starting with a slight zoom
-  
+
   // New state for instructions popup
   const [instructionsOpen, setInstructionsOpen] = useState(true);
 
@@ -769,15 +767,8 @@ export default function Dashboard() {
   };
 
   // Event handlers
-  interface Thresholds {
-    tree_count: number;
-    sample_size: number;
-    max_tree_depth: number;
-    threshold: number;
-  }
-
-  const handleThresholdsChange = (field: keyof Thresholds, value: number) => {
-    setThresholds((prev: Thresholds) => ({ ...prev, [field]: value }));
+  const handleThresholdsChange = (field: keyof typeof thresholds, value: number) => {
+    setThresholds(prev => ({ ...prev, [field]: value }));
   };
 
   // Process results from API and update UI components
@@ -788,7 +779,7 @@ export default function Dashboard() {
     // Turn off loading state for scatter plot
     setScatterLoading(false);
     setIsAnalyzing(false);
-    
+
     // Play completion sound
     playCompletionSound();
 
@@ -893,13 +884,15 @@ export default function Dashboard() {
       <CssBaseline />
       <GlobalStyles
         styles={{
-          html: { overflowY: 'auto' }, // Allow vertical scrolling
-          body: { margin: 0, padding: 0, backgroundColor: commonStyles.colors.background },
+          // Move @import statements to the top
+          '@import': "url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap')",
+          html: { scrollBehavior: 'smooth' },
+          body: { margin: 0, padding: 0, backgroundColor: '#141432', overflowX: 'hidden' },
+          '#root': { maxWidth: '100%', margin: 0, padding: 0 },
           '@keyframes gradientAnimation': animations.gradientAnimation,
           '@keyframes writing': animations.writing,
           '@keyframes floatAnimation': animations.floatAnimation,
           '@keyframes fadeIn': animations.fadeIn,
-          '@import': "url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap')",
         }}
       />
 
@@ -935,7 +928,7 @@ export default function Dashboard() {
                 Welcome to the Fraud Detection Dashboard
               </Typography>
             </Box>
-            
+
             <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 3 }}>
               Get started by following these simple steps:
             </Typography>
@@ -982,8 +975,8 @@ export default function Dashboard() {
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 onClick={() => setInstructionsOpen(false)}
                 sx={{
                   backgroundColor: '#2196F3',
@@ -1048,7 +1041,7 @@ export default function Dashboard() {
         {sidebarOpen ? (
           <>
             {/* Full Sidebar with toggle button */}
-            <Box sx={{ 
+            <Box sx={{
               position: 'absolute',
               top: 0,
               left: 0,
@@ -1088,7 +1081,7 @@ export default function Dashboard() {
           </>
         ) : (
           /* Mini Sidebar when collapsed */
-          <MiniSidebar 
+          <MiniSidebar
             onClick={toggleSidebar}
             selectedModel={selectedModel}
             onModelSelect={setSelectedModel}
@@ -1125,7 +1118,6 @@ export default function Dashboard() {
               pb: 3, // Add padding at the bottom for scrolling
             }}
           >
-            
 
             {/* Two graphs side by side */}
             <Box sx={{
@@ -1158,9 +1150,9 @@ export default function Dashboard() {
                 }}
               >
                 {/* Header with title and zoom controls */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
                   mb: 1,
                   px: 1,
@@ -1168,12 +1160,12 @@ export default function Dashboard() {
                   <Typography variant="h5" sx={{ color: 'white', fontWeight: 500 }}>
                     Visualization
                   </Typography>
-                  
+
                   {/* Zoom controls */}
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Tooltip title="Zoom Out">
-                      <IconButton 
-                        onClick={handleZoomOut} 
+                      <IconButton
+                        onClick={handleZoomOut}
                         size="small"
                         sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
                       >
@@ -1184,8 +1176,8 @@ export default function Dashboard() {
                       {Math.round(visualizationZoom * 100)}%
                     </Typography>
                     <Tooltip title="Zoom In">
-                      <IconButton 
-                        onClick={handleZoomIn} 
+                      <IconButton
+                        onClick={handleZoomIn}
                         size="small"
                         sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
                       >
@@ -1194,7 +1186,7 @@ export default function Dashboard() {
                     </Tooltip>
                   </Box>
                 </Box>
-                
+
                 {/* Visualization with zoom and drag functionality applied */}
                 <Box sx={{
                   flex: 1,
@@ -1211,9 +1203,9 @@ export default function Dashboard() {
                     cursor: 'grabbing',
                   }
                 }}>
-                  
+
                   {/* Visualization content with pan/drag functionality */}
-                  <Box 
+                  <Box
                     sx={{
                       width: '100%',
                       height: '100%',
@@ -1223,36 +1215,36 @@ export default function Dashboard() {
                     onMouseDown={(e) => {
                       // Enable dragging only if left mouse button is pressed
                       if (e.button !== 0) return;
-                      
+
                       const container = e.currentTarget.parentElement;
                       if (!container) return;
-                      
+
                       // Get initial mouse position
                       const startX = e.clientX;
                       const startY = e.clientY;
-                      
+
                       // Get initial scroll position
                       const scrollLeft = container.scrollLeft;
                       const scrollTop = container.scrollTop;
-                      
+
                       // Handle mouse move
                       const handleMouseMove = (e: MouseEvent) => {
                         // Calculate how far the mouse has moved
                         const dx = e.clientX - startX;
                         const dy = e.clientY - startY;
-                        
+
                         // Scroll the container
                         container.scrollLeft = scrollLeft - dx;
                         container.scrollTop = scrollTop - dy;
                       };
-                      
+
                       // Handle mouse up
                       const handleMouseUp = () => {
                         // Remove event listeners
                         document.removeEventListener('mousemove', handleMouseMove);
                         document.removeEventListener('mouseup', handleMouseUp);
                       };
-                      
+
                       // Add event listeners for mouse move and mouse up
                       document.addEventListener('mousemove', handleMouseMove);
                       document.addEventListener('mouseup', handleMouseUp);
@@ -1357,6 +1349,14 @@ export default function Dashboard() {
               </Paper>
             </Box>
 
+            {/* NEW: Transaction Timeline component */}
+            {(analysisResults || isAnalyzing) && (
+              <TransactionTimeline
+                data={analysisResults}
+                isLoading={isAnalyzing}
+              />
+            )}
+
             {/* Results section with tabs */}
             {(analysisResults || isAnalyzing) && (
               <Paper
@@ -1380,9 +1380,9 @@ export default function Dashboard() {
               >
                 {/* Tab navigation */}
                 <Box sx={{ borderBottom: 1, borderColor: 'rgba(255, 255, 255, 0.1)' }}>
-                  <Tabs 
-                    value={tabValue} 
-                    onChange={handleTabChange} 
+                  <Tabs
+                    value={tabValue}
+                    onChange={handleTabChange}
                     aria-label="Results tabs"
                     variant="fullWidth"
                     sx={{
@@ -1399,23 +1399,23 @@ export default function Dashboard() {
                       },
                     }}
                   >
-                    <Tab 
-                      icon={<StorageIcon sx={{ fontSize: 20 }} />} 
-                      iconPosition="start" 
-                      label="Fraud Transactions" 
-                      sx={{ minHeight: '48px' }} 
+                    <Tab
+                      icon={<StorageIcon sx={{ fontSize: 20 }} />}
+                      iconPosition="start"
+                      label="Fraud Transactions"
+                      sx={{ minHeight: '48px' }}
                     />
-                    <Tab 
-                      icon={<AssessmentIcon sx={{ fontSize: 20 }} />} 
-                      iconPosition="start" 
-                      label="Model Metrics" 
-                      sx={{ minHeight: '48px' }} 
+                    <Tab
+                      icon={<AssessmentIcon sx={{ fontSize: 20 }} />}
+                      iconPosition="start"
+                      label="Model Metrics"
+                      sx={{ minHeight: '48px' }}
                     />
-                    <Tab 
-                      icon={<TableChartIcon sx={{ fontSize: 20 }} />} 
-                      iconPosition="start" 
-                      label="Confusion Matrix" 
-                      sx={{ minHeight: '48px' }} 
+                    <Tab
+                      icon={<TableChartIcon sx={{ fontSize: 20 }} />}
+                      iconPosition="start"
+                      label="Confusion Matrix"
+                      sx={{ minHeight: '48px' }}
                     />
                   </Tabs>
                 </Box>
@@ -1424,17 +1424,17 @@ export default function Dashboard() {
                 <Box sx={{ p: 3 }}>
                   {/* Fraud Transactions Tab */}
                   {tabValue === 0 && (
-                    <TransactionsPanel 
-                      data={analysisResults} 
-                      isLoading={isAnalyzing} 
+                    <TransactionsPanel
+                      data={analysisResults}
+                      isLoading={isAnalyzing}
                     />
                   )}
 
                   {/* Model Metrics Tab */}
                   {tabValue === 1 && (
-                    <MetricsPanel 
-                      data={analysisResults} 
-                      isLoading={isAnalyzing} 
+                    <MetricsPanel
+                      data={analysisResults}
+                      isLoading={isAnalyzing}
                       selectedModel={selectedModel}
                       thresholds={thresholds}
                     />
@@ -1442,9 +1442,9 @@ export default function Dashboard() {
 
                   {/* Confusion Matrix Tab */}
                   {tabValue === 2 && (
-                    <ConfusionMatrixPanel 
-                      data={analysisResults} 
-                      isLoading={isAnalyzing} 
+                    <ConfusionMatrixPanel
+                      data={analysisResults}
+                      isLoading={isAnalyzing}
                     />
                   )}
                 </Box>
@@ -1474,10 +1474,10 @@ export default function Dashboard() {
                   }
                 }}
               >
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
                   textAlign: 'center',
                   maxWidth: '600px'
                 }}>
@@ -1490,12 +1490,28 @@ export default function Dashboard() {
             )}
           </Box>
 
-          {/* Model Settings Dialog Component */}
           <ModelSettingsDialog
             open={thresholdsOpen}
             onClose={() => setThresholdsOpen(false)}
             thresholds={thresholds}
             handleThresholdsChange={handleThresholdsChange}
+            selectedModel={selectedModel}
+            onRunModel={handleRunModel}
+            currentMetrics={analysisResults ? {
+              accuracy: analysisResults.accuracy,
+              precision: analysisResults.precision,
+              recall: analysisResults.recall,
+              f1_score: analysisResults.f1_score,
+              falsePositiveRate: analysisResults.confusion_matrix ?
+                analysisResults.confusion_matrix.false_positives /
+                (analysisResults.confusion_matrix.false_positives + analysisResults.confusion_matrix.true_negatives) :
+                undefined,
+              falseNegativeRate: analysisResults.confusion_matrix ?
+                analysisResults.confusion_matrix.false_negatives /
+                (analysisResults.confusion_matrix.false_negatives + analysisResults.confusion_matrix.true_positives) :
+                undefined,
+              fraudCount: analysisResults.fraud_count || (analysisResults.fraud_transactions?.length || 0)
+            } : undefined}
           />
 
           {/* Header Action Icons - Enhanced with Team Credits */}
@@ -1517,16 +1533,16 @@ export default function Dashboard() {
               border: '1px solid rgba(255, 255, 255, 0.1)',
             }}
           >
-            <Typography variant="body2" sx={{ 
-              color: 'rgba(255, 255, 255, 0.8)', 
-              fontWeight: 500, 
-              display: {xs: 'none', sm: 'block'} 
+            <Typography variant="body2" sx={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontWeight: 500,
+              display: { xs: 'none', sm: 'block' }
             }}>
               Fraud Detection System v1.0
             </Typography>
-            <Divider orientation="vertical" flexItem sx={{ 
+            <Divider orientation="vertical" flexItem sx={{
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              display: {xs: 'none', sm: 'block'}
+              display: { xs: 'none', sm: 'block' }
             }} />
             <Tooltip title="Team Credits">
               <IconButton
@@ -1575,105 +1591,6 @@ export default function Dashboard() {
             onClose={() => setTeamDialogOpen(false)}
             teamMembers={teamMembers}
           />
-
-          {/* Instructions Modal */}
-          <Modal
-            open={instructionsOpen}
-            onClose={() => setInstructionsOpen(false)}
-            aria-labelledby="instructions-modal-title"
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <Fade in={instructionsOpen}>
-              <Paper
-                elevation={4}
-                sx={{
-                  width: '90%',
-                  maxWidth: '650px',
-                  bgcolor: 'rgba(30, 30, 60, 0.95)',
-                  border: '1px solid rgba(33, 150, 243, 0.4)',
-                  borderRadius: '16px',
-                  p: 4,
-                  backdropFilter: 'blur(8px)',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                  outline: 'none',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <InfoIcon sx={{ color: '#2196F3', mr: 2, fontSize: 28 }} />
-                  <Typography id="instructions-modal-title" variant="h5" sx={{ color: 'white', fontWeight: 500 }}>
-                    Welcome to the Fraud Detection Dashboard
-                  </Typography>
-                </Box>
-                
-                <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 3 }}>
-                  Get started by following these simple steps:
-                </Typography>
-
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
-                    1. Choose a Detection Algorithm
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 2 }}>
-                    Select either Random Forest (supervised) or Isolation Forest (unsupervised) from the sidebar.
-                  </Typography>
-
-                  <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
-                    2. Adjust Model Parameters (Optional)
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 2 }}>
-                    Click the settings icon to customize tree count, sample size, and other parameters.
-                  </Typography>
-
-                  <Typography variant="subtitle1" sx={{ color: '#2196F3', mb: 1, fontWeight: 500 }}>
-                    3. Run the Analysis
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)', ml: 2, mb: 3 }}>
-                    Click "RUN MODEL" to analyze the transaction data and detect potential fraud.
-                  </Typography>
-                </Box>
-
-                <Box sx={{
-                  bgcolor: 'rgba(33, 150, 243, 0.1)',
-                  border: '1px solid rgba(33, 150, 243, 0.3)',
-                  borderRadius: '8px',
-                  p: 2,
-                  mb: 3
-                }}>
-                  <Typography variant="h6" sx={{ color: '#2196F3', mb: 1 }}>
-                    Algorithm Comparison
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 1 }}>
-                    <strong>Random Forest:</strong> Supervised learning model for high accuracy with labeled data
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                    <strong>Isolation Forest:</strong> Unsupervised learning model for anomaly detection without labels
-                  </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button 
-                    variant="contained" 
-                    onClick={() => setInstructionsOpen(false)}
-                    sx={{
-                      backgroundColor: '#2196F3',
-                      '&:hover': {
-                        backgroundColor: '#1976d2',
-                      },
-                      textTransform: 'none',
-                      fontWeight: 'bold',
-                      px: 3
-                    }}
-                  >
-                    Got it
-                  </Button>
-                </Box>
-              </Paper>
-            </Fade>
-          </Modal>
         </Box>
       </Box>
     </>

@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import TreeVisualization from './TreeVisualization';
 import { TreeVisualizationProps, COLORS, TREE_CONSTANTS } from './types';
 
-// Tree node structure for Random Forest (similar to Isolation Forest for compatibility)
+// Tree node structure for Random Forest
 interface RFTreeNode {
   depth: number;
   samples: number;
@@ -29,6 +29,7 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [currentFeature, setCurrentFeature] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(true); // Database connectivity check
+  const [hasInitialized, setHasInitialized] = useState<boolean>(false); // Track if we've initialized
   
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -377,6 +378,7 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
     if (animationRef.current) clearInterval(animationRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
 
+    // Prevent starting if already active
     if (animationActive) return;
     
     setAnimationActive(true);
@@ -448,12 +450,20 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
         
         // Update progress - loop back to 0% when we hit threshold
         if (treeCount > thresholds.tree_count) {
-          // Reset tree count to 1 but keep animation running
-          treeCount = 1;
-          setCurrentTree(1);
-          setProgress(0);
+          // Clear intervals and mark animation as complete
+          if (animationRef.current) {
+            clearInterval(animationRef.current);
+            animationRef.current = null;
+          }
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
           
-          // Optionally notify completion but keep running
+          setAnimationActive(false);
+          setProgress(100);
+          
+          // Notify completion
           if (onComplete) onComplete();
         } else {
           // Update the progress normally
@@ -461,11 +471,11 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
         }
       } catch (error) {
         console.error("Error in animation loop:", error);
-        // Don't stop the animation, try to recover
+        // Try to recover by creating a new tree
         treeRef.current = createTree();
         drawTree(treeRef.current);
       }
-    }, 2000);  // Animation speed: 200ms per step
+    }, 300);  // Animation speed: 300ms per step
     
     return () => {
       // Cleanup function for the animation
@@ -495,36 +505,32 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
     };
   }, []);
   
-  // Auto-start if specified - using useEffect to respond immediately to autoStart prop changes
+  // Fix for autoStart effect - prevent infinite loops
   useEffect(() => {
+    // Log only once when autoStart changes
     console.log("AutoStart changed to:", autoStart);
-    if (autoStart && !animationActive) {
-      // Add a short delay to ensure the component is fully mounted
+    
+    // Only start animation if autoStart is true, animation isn't active, and component has initialized
+    if (autoStart && !animationActive && hasInitialized) {
+      // Add a short delay to ensure full mounting
       const timer = setTimeout(() => {
         startAnimation();
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [autoStart, startAnimation, animationActive]);
+  }, [autoStart, animationActive, hasInitialized, startAnimation]);
   
-  // Effect to handle the case when animation stops unexpectedly
+  // Initialize component
   useEffect(() => {
-    if (animationActive && progress > 0 && progress < 100) {
-      // If animation is active but no intervals are running, restart
-      const checkAnimationState = setTimeout(() => {
-        if (!animationRef.current && !treeRef.current) {
-          console.log("Animation stopped unexpectedly, restarting");
-          // Reset state and restart animation
-          setAnimationActive(false);
-          setTimeout(() => {
-            startAnimation();
-          }, 100);
-        }
-      }, 2000); // Check after 2 seconds
-      
-      return () => clearTimeout(checkAnimationState);
+    // Mark the component as initialized after the first render
+    setHasInitialized(true);
+    
+    // Create and draw initial tree
+    if (!treeRef.current) {
+      treeRef.current = createTree();
+      drawTree(treeRef.current);
     }
-  }, [animationActive, progress, startAnimation]);
+  }, [createTree, drawTree]);
 
   return (
     <TreeVisualization 

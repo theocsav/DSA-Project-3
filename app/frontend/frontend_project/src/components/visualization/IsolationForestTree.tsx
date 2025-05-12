@@ -21,13 +21,14 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
   const { thresholds, onComplete, autoStart = false } = props;
   
   // State
-  const [animationActive, setAnimationActive] = useState<boolean>(autoStart);
+  const [animationActive, setAnimationActive] = useState<boolean>(false);
   const [currentTree, setCurrentTree] = useState<number>(0);
   const [steps, setSteps] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [currentFeature, setCurrentFeature] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(true); // Database connectivity check
+  const [hasInitialized, setHasInitialized] = useState<boolean>(false); // Track if we've initialized
   
   // Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -400,6 +401,12 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
     // Add a resize listener to keep the canvas properly sized
     const resizeObserver = new ResizeObserver(() => {
       setupCanvas();
+      
+      // Redraw if we have a tree
+      const treeData = createTree();
+      if (treeData && treeData.root) {
+        drawTree(treeData.root, []);
+      }
     });
     
     resizeObserver.observe(canvas);
@@ -407,7 +414,7 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
+  }, [createTree, drawTree]);
   
   // Start animation
   const startAnimation = useCallback(() => {
@@ -416,6 +423,17 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
       return;
     }
     
+    // Clear existing intervals to avoid multiple animations
+    if (animationRef.current) {
+      clearInterval(animationRef.current);
+      animationRef.current = null;
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    // Prevent starting if already active
     if (animationActive) return;
     
     setAnimationActive(true);
@@ -449,6 +467,14 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
         if (result) {
           treeData = result;
           drawTree(treeData.root, treeData.currentPath || []);
+        } else {
+          // If splitting didn't work, try a new tree
+          treeCount++;
+          setCurrentTree(treeCount);
+          treeSteps = 0;
+          setSteps(0);
+          treeData = createTree();
+          drawTree(treeData.root, []);
         }
       } else {
         // Start a new tree
@@ -467,8 +493,14 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
       
       // Check if we're done
       if (treeCount >= thresholds.tree_count) {
-        if (animationRef.current) clearInterval(animationRef.current);
-        if (timerRef.current) clearInterval(timerRef.current);
+        if (animationRef.current) {
+          clearInterval(animationRef.current);
+          animationRef.current = null;
+        }
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
         setProgress(100);
         setAnimationActive(false);
         
@@ -478,26 +510,60 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
         // Call the onComplete callback if provided
         if (onComplete) onComplete();
       }
-    }, 300); // Faster animation for better visibility
+    }, 300); // Animation speed
+    
+    return () => {
+      // Cleanup function
+      if (animationRef.current) {
+        clearInterval(animationRef.current);
+        animationRef.current = null;
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [animationActive, createTree, drawTree, splitNode, thresholds, onComplete, isConnected]);
   
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      if (animationRef.current) clearInterval(animationRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (animationRef.current) {
+        clearInterval(animationRef.current);
+        animationRef.current = null;
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, []);
   
-  // Handle animation trigger from parent via ref
+  // Fix for autoStart effect - Only run once and prevent infinite loops
   useEffect(() => {
-    if (autoStart) {
+    // Mark component as initialized
+    setHasInitialized(true);
+    
+    // Create initial tree data
+    const treeData = createTree();
+    drawTree(treeData.root, []);
+  }, [createTree, drawTree]); 
+  
+  // Handle animation trigger from parent via autoStart prop
+  useEffect(() => {
+    // Only log once when autoStart changes to avoid console spam
+    if (hasInitialized) {
+      console.log("AutoStart changed to:", autoStart);
+    }
+    
+    // Only start animation if autoStart is true, animation isn't active, and component is initialized
+    if (autoStart && !animationActive && hasInitialized) {
       const timeoutId = setTimeout(() => {
         startAnimation();
-      }, 50);
+      }, 100);
       return () => clearTimeout(timeoutId);
     }
-  }, [autoStart, startAnimation]);
+  }, [autoStart, animationActive, hasInitialized, startAnimation]);
 
   return (
     <TreeVisualization 
