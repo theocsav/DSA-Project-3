@@ -15,7 +15,6 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DownloadIcon from '@mui/icons-material/Download';
-import UploadIcon from '@mui/icons-material/Upload';
 import { commonStyles } from '../../styles/common';
 
 interface SidebarProps {
@@ -23,7 +22,9 @@ interface SidebarProps {
   selectedModel: string;
   onModelSelect: (model: string) => void;
   onSettingsClick: () => void;
-  onRunModel?: () => void; // Added prop for run model action
+  onRunModel?: () => void;
+  onExportResults?: () => void;
+  hasResults?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -31,7 +32,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   selectedModel,
   onModelSelect,
   onSettingsClick,
-  onRunModel
+  onRunModel,
+  onExportResults,
+  hasResults
 }) => {
   return (
     <Drawer
@@ -98,7 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <ListItem disablePadding>
           <ListItemButton 
             aria-label="Run"
-            onClick={onRunModel} // Use the new onRunModel prop
+            onClick={onRunModel}
             sx={{
               background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
               borderRadius: '8px',
@@ -222,34 +225,32 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       <Box sx={{ flexGrow: 1 }} />
       
-      {/* Bottom Actions */}
+      {/* Export Results Button */}
       <List>
-        {[
-          { label: 'Export Results', icon: <DownloadIcon /> },
-          { label: 'Upload Data', icon: <UploadIcon /> }
-        ].map((item, index) => (
-          <ListItem key={item.label} disablePadding>
-            <ListItemButton 
-              aria-label={item.label}
-              sx={{
-                margin: index === 1 ? '4px 8px 16px 8px' : '4px 8px',
-                borderRadius: '8px',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText 
-                primary={item.label} 
-                sx={{ '& .MuiListItemText-primary': { color: 'rgba(255, 255, 255, 0.7)' } }} 
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        <ListItem disablePadding>
+          <ListItemButton 
+            aria-label="Export Results"
+            onClick={onExportResults}
+            disabled={!hasResults}
+            sx={{
+              margin: '4px 8px 16px 8px',
+              borderRadius: '8px',
+              transition: 'all 0.2s',
+              opacity: !hasResults ? 0.5 : 1,
+              '&:hover': {
+                backgroundColor: hasResults ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              <DownloadIcon />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Export Results" 
+              sx={{ '& .MuiListItemText-primary': { color: 'rgba(255, 255, 255, 0.7)' } }} 
+            />
+          </ListItemButton>
+        </ListItem>
       </List>
     </Drawer>
   );

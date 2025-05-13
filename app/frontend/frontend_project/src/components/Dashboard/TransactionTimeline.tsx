@@ -126,8 +126,12 @@ const TransactionTimeline: React.FC<TransactionTimelineProps> = ({ data, isLoadi
         borderRadius: '16px',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         overflow: 'hidden',
-        mb: 3,
-        transition: 'all 0.3s ease',
+        mb: 0,
+        transition: 'all 0.3s ease-in-out',
+        '&:hover': {
+          transform: 'translateY(-5px)',
+          boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
+        },
       }}
     >
       <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

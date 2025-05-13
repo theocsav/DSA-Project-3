@@ -15,12 +15,14 @@ import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import Settings from '@mui/icons-material/Settings';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import InfoIcon from '@mui/icons-material/InfoOutlined';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import BubbleChartIcon from '@mui/icons-material/BubbleChart';
 
 // Import our custom components
-import Sidebar from '../components/Dashboard/Sidebar';
-import ModelSettingsDialog from '../components/Dashboard/ModelSettingsDialog';
-import TeamDialog from '../components/Dashboard/TeamDialog';
-import TransactionTimeline from '../components/Dashboard/TransactionTimeline';
+import Sidebar from '../components/dashboard/Sidebar';
+import ModelSettingsDialog from '../components/dashboard/ModelSettingsDialog';
+import TeamDialog from '../components/dashboard/TeamDialog';
+import TransactionTimeline from '../components/dashboard/TransactionTimeline';
 import { TeamMember } from '../components/TeamMemberCard';
 import { commonStyles, animations } from '../styles/common';
 import { AnalysisResult, IsolationForestParams, RandomForestParams } from '../api/types';
@@ -877,6 +879,43 @@ export default function Dashboard() {
     }
   ];
 
+  // Handle export results
+  const handleExportResults = () => {
+    if (!analysisResults) return;
+
+    // Create CSV content
+    const fraudTransactions = analysisResults.fraud_transactions || [];
+    const nonFraudTransactions = analysisResults.non_fraud_transactions || [];
+    const allTransactions = [...fraudTransactions, ...nonFraudTransactions];
+
+    // Add prediction column to each transaction
+    const transactionsWithPredictions = allTransactions.map(transaction => ({
+      ...transaction,
+      predicted_fraud: fraudTransactions.includes(transaction) ? 1 : 0
+    }));
+
+    // Define CSV headers
+    const headers = Object.keys(transactionsWithPredictions[0] || {}).join(',');
+    
+    // Convert transactions to CSV rows
+    const csvRows = transactionsWithPredictions.map(transaction => 
+      Object.values(transaction).join(',')
+    );
+
+    // Combine headers and rows
+    const csvContent = [headers, ...csvRows].join('\n');
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `fraud_detection_results_${selectedModel.toLowerCase().replace(' ', '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Render component
   return (
     <>
@@ -1055,6 +1094,8 @@ export default function Dashboard() {
                 onModelSelect={setSelectedModel}
                 onSettingsClick={() => setThresholdsOpen(true)}
                 onRunModel={handleRunModel}
+                onExportResults={handleExportResults}
+                hasResults={!!analysisResults}
               />
 
               {/* Add a toggle button to collapse the sidebar */}
@@ -1141,8 +1182,9 @@ export default function Dashboard() {
                   flexDirection: 'column',
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
                   backdropFilter: 'blur(8px)',
-                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  transition: 'all 0.3s ease-in-out',
                   '&:hover': {
+                    transform: 'translateY(-5px)',
                     boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
                   },
                   overflow: 'hidden',
@@ -1157,9 +1199,12 @@ export default function Dashboard() {
                   mb: 1,
                   px: 1,
                 }}>
-                  <Typography variant="h5" sx={{ color: 'white', fontWeight: 500 }}>
-                    Visualization
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <AccountTreeIcon sx={{ color: commonStyles.colors.primary, mr: 1.5 }} />
+                    <Typography variant="h5" sx={{ color: 'white', fontWeight: 500 }}>
+                      Visualization
+                    </Typography>
+                  </Box>
 
                   {/* Zoom controls */}
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -1283,7 +1328,7 @@ export default function Dashboard() {
                   flexDirection: 'column',
                   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
                   backdropFilter: 'blur(8px)',
-                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  transition: 'all 0.3s ease-in-out',
                   '&:hover': {
                     transform: 'translateY(-5px)',
                     boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
@@ -1291,9 +1336,12 @@ export default function Dashboard() {
                   overflow: 'hidden',
                 }}
               >
-                <Typography variant="h5" sx={{ color: 'white', mb: 1.5, fontWeight: 500 }}>
-                  Scatter Plot
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                  <BubbleChartIcon sx={{ color: commonStyles.colors.primary, mr: 1.5 }} />
+                  <Typography variant="h5" sx={{ color: 'white', fontWeight: 500 }}>
+                    Scatter Plot
+                  </Typography>
+                </Box>
                 <Box sx={{
                   flex: 1,
                   display: 'flex',
@@ -1538,7 +1586,7 @@ export default function Dashboard() {
               fontWeight: 500,
               display: { xs: 'none', sm: 'block' }
             }}>
-              Fraud Detection System v1.0
+              Fraud Detection System v1.2
             </Typography>
             <Divider orientation="vertical" flexItem sx={{
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
