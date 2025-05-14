@@ -10,8 +10,6 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import Settings from '@mui/icons-material/Settings';
 import PlayArrow from '@mui/icons-material/PlayArrow';
 import InfoIcon from '@mui/icons-material/InfoOutlined';
@@ -707,7 +705,7 @@ const MiniSidebar: React.FC<{
   );
 };
 
-// Main Dashboard component
+  // Main Dashboard component
 export default function Dashboard() {
   // State management
   const [thresholdsOpen, setThresholdsOpen] = useState(false);
@@ -724,10 +722,13 @@ export default function Dashboard() {
   const [scatterLoading, setScatterLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Header visibility state
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
-  // New state for sidebar and visualization zoom
+  // New state for sidebar
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [visualizationZoom, setVisualizationZoom] = useState(1.2); // Starting with a slight zoom
 
   // New state for instructions popup
   const [instructionsOpen, setInstructionsOpen] = useState(true);
@@ -741,6 +742,30 @@ export default function Dashboard() {
   const randomForestRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Handle scroll to show/hide header
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Determine if we're scrolling up or down
+      if (currentScrollY > lastScrollY + 10) {
+        // Scrolling down - hide header
+        setHeaderVisible(false);
+      } else if (currentScrollY < lastScrollY - 10 || currentScrollY < 50) {
+        // Scrolling up or near top - show header
+        setHeaderVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [lastScrollY]);
+  
   // Initialize the audio element on component mount
   useEffect(() => {
     audioRef.current = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3');
@@ -757,15 +782,6 @@ export default function Dashboard() {
       audioRef.current.currentTime = 0; // Reset audio to start
       audioRef.current.play().catch(error => console.error('Error playing sound:', error));
     }
-  };
-
-  // Zoom handlers
-  const handleZoomIn = () => {
-    setVisualizationZoom(prev => Math.min(prev + 0.2, 2.5));
-  };
-
-  const handleZoomOut = () => {
-    setVisualizationZoom(prev => Math.max(prev - 0.2, 0.8));
   };
 
   // Event handlers
@@ -1013,7 +1029,7 @@ export default function Dashboard() {
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <Button
                 variant="contained"
                 onClick={() => setInstructionsOpen(false)}
@@ -1188,10 +1204,10 @@ export default function Dashboard() {
                     boxShadow: '0 12px 40px rgba(100, 100, 255, 0.4)',
                   },
                   overflow: 'hidden',
-                  position: 'relative', // For zoom controls positioning
+                  position: 'relative', // For positioning
                 }}
               >
-                {/* Header with title and zoom controls */}
+                {/* Header with title */}
                 <Box sx={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -1205,94 +1221,29 @@ export default function Dashboard() {
                       Visualization
                     </Typography>
                   </Box>
-
-                  {/* Zoom controls */}
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Tooltip title="Zoom Out">
-                      <IconButton
-                        onClick={handleZoomOut}
-                        size="small"
-                        sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
-                      >
-                        <ZoomOutIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', mx: 0.5 }}>
-                      {Math.round(visualizationZoom * 100)}%
-                    </Typography>
-                    <Tooltip title="Zoom In">
-                      <IconButton
-                        onClick={handleZoomIn}
-                        size="small"
-                        sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
-                      >
-                        <ZoomInIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
                 </Box>
 
-                {/* Visualization with zoom and drag functionality applied */}
+                {/* Visualization container - simplified to match box size exactly */}
                 <Box sx={{
                   flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   position: 'relative',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  overflow: 'hidden',
-                  height: '100%',
                   width: '100%',
-                  cursor: 'grab',
-                  '&:active': {
-                    cursor: 'grabbing',
-                  }
+                  height: '100%', 
+                  overflow: 'hidden',
                 }}>
-
-                  {/* Visualization content with pan/drag functionality */}
+                  {/* Direct rendering of visualization to fill container */}
                   <Box
                     sx={{
-                      width: '100%',
-                      height: '100%',
-                      transform: `scale(${visualizationZoom})`,
-                      transition: 'transform 0.3s ease',
-                    }}
-                    onMouseDown={(e) => {
-                      // Enable dragging only if left mouse button is pressed
-                      if (e.button !== 0) return;
-
-                      const container = e.currentTarget.parentElement;
-                      if (!container) return;
-
-                      // Get initial mouse position
-                      const startX = e.clientX;
-                      const startY = e.clientY;
-
-                      // Get initial scroll position
-                      const scrollLeft = container.scrollLeft;
-                      const scrollTop = container.scrollTop;
-
-                      // Handle mouse move
-                      const handleMouseMove = (e: MouseEvent) => {
-                        // Calculate how far the mouse has moved
-                        const dx = e.clientX - startX;
-                        const dy = e.clientY - startY;
-
-                        // Scroll the container
-                        container.scrollLeft = scrollLeft - dx;
-                        container.scrollTop = scrollTop - dy;
-                      };
-
-                      // Handle mouse up
-                      const handleMouseUp = () => {
-                        // Remove event listeners
-                        document.removeEventListener('mousemove', handleMouseMove);
-                        document.removeEventListener('mouseup', handleMouseUp);
-                      };
-
-                      // Add event listeners for mouse move and mouse up
-                      document.addEventListener('mousemove', handleMouseMove);
-                      document.addEventListener('mouseup', handleMouseUp);
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      '& canvas': {
+                        width: '100% !important', 
+                        height: '100% !important',
+                        objectFit: 'contain'
+                      }
                     }}
                   >
                     {selectedModel === 'Isolation Forest' ? (
@@ -1579,6 +1530,9 @@ export default function Dashboard() {
               padding: '0 16px',
               boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
+              transition: 'transform 0.3s ease, opacity 0.3s ease',
+              transform: headerVisible ? 'translateY(0)' : 'translateY(-100px)',
+              opacity: headerVisible ? 1 : 0,
             }}
           >
             <Typography variant="body2" sx={{
@@ -1586,7 +1540,7 @@ export default function Dashboard() {
               fontWeight: 500,
               display: { xs: 'none', sm: 'block' }
             }}>
-              Fraud Detection System v1.2
+              Fraud Detection System v1.5
             </Typography>
             <Divider orientation="vertical" flexItem sx={{
               backgroundColor: 'rgba(255, 255, 255, 0.1)',

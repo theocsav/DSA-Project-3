@@ -16,9 +16,14 @@ interface IFTreeNode {
   parent?: IFTreeNode;
 }
 
+// Extend props to include animationSpeed
+interface IsolationForestTreeProps extends TreeVisualizationProps {
+  animationSpeed?: number;
+}
+
 // Component implementation
-const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((props, ref) => {
-  const { thresholds, onComplete, autoStart = false } = props;
+const IsolationForestTree = forwardRef<HTMLDivElement, IsolationForestTreeProps>((props, ref) => {
+  const { thresholds, onComplete, autoStart = false, animationSpeed = 300 } = props;
   
   // State
   const [animationActive, setAnimationActive] = useState<boolean>(false);
@@ -456,7 +461,7 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
       setElapsedTime((Date.now() - startTime) / 1000);
     }, 100);
     
-    // Process animation steps
+    // Process animation steps - Use the animationSpeed prop here
     animationRef.current = window.setInterval(() => {
       treeSteps++;
       setSteps(treeSteps);
@@ -510,7 +515,7 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
         // Call the onComplete callback if provided
         if (onComplete) onComplete();
       }
-    }, 300); // Animation speed
+    }, animationSpeed); // Use animationSpeed parameter from props
     
     return () => {
       // Cleanup function
@@ -523,7 +528,7 @@ const IsolationForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((
         timerRef.current = null;
       }
     };
-  }, [animationActive, createTree, drawTree, splitNode, thresholds, onComplete, isConnected]);
+  }, [animationActive, createTree, drawTree, splitNode, thresholds, onComplete, isConnected, animationSpeed]);
   
   // Clean up on unmount
   useEffect(() => {

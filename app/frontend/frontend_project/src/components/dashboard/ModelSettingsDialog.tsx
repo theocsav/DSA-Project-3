@@ -10,9 +10,17 @@ import {
   Divider,
   Slider,
   Tooltip,
-  Paper
+  Paper,
+  IconButton,
+  Switch,
+  FormControlLabel,
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import SettingsIcon from '@mui/icons-material/Settings';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import TuneIcon from '@mui/icons-material/Tune';
 import { commonStyles } from '../../styles/common';
 
 interface ThresholdValues {
@@ -52,6 +60,11 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
   // Local state for all parameters
   const [localValues, setLocalValues] = useState<ThresholdValues>({...thresholds});
   const [predictedImpact, setPredictedImpact] = useState<any>(null);
+  const [showPreviewPanel, setShowPreviewPanel] = useState(true);
+  
+  // Theme for responsive design
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Use ref to avoid dependency loops in useEffect
   const thresholdsRef = useRef(thresholds);
@@ -184,36 +197,106 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
       fullWidth
       PaperProps={{
         sx: {
-          background: 'linear-gradient(135deg, rgba(28, 28, 63, 0.95) 0%, rgba(26, 26, 64, 0.95) 100%)',
+          background: 'linear-gradient(135deg, rgba(20, 20, 50, 0.98) 0%, rgba(26, 26, 64, 0.98) 100%)',
           color: 'white',
           borderRadius: '20px',
-          boxShadow: '0 15px 35px rgba(0, 0, 0, 0.5)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          maxHeight: '90vh'
+          boxShadow: '0 15px 35px rgba(0, 0, 0, 0.6)',
+          border: '1px solid rgba(33, 150, 243, 0.3)',
+          maxHeight: '90vh',
+          overflow: 'hidden',
+          backdropFilter: 'blur(8px)',
         }
       }}
     >
-      <DialogContent sx={{ my: 2, px: 3, py: 3 }}>
-        <Typography variant="h5" sx={{ 
-          mb: 3, 
-          color: '#2196F3', 
-          fontWeight: 600,
+      {/* Custom header with title and close button */}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          px: 3,
+          py: 2.5,
           position: 'relative',
-          display: 'inline-block',
-          '&::after': {
+          '&:after': {
             content: '""',
             position: 'absolute',
-            width: '40%',
-            height: '2px',
-            bottom: '-8px',
-            left: '0',
-            background: 'linear-gradient(90deg, #2196F3, transparent)'
+            bottom: 0,
+            left: '5%',
+            width: '90%',
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.6), transparent)',
           }
-        }}>
-          {selectedModel} Settings
-        </Typography>
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <TuneIcon 
+            sx={{ 
+              color: '#2196F3', 
+              mr: 2, 
+              fontSize: 28,
+              filter: 'drop-shadow(0 0 6px rgba(33, 150, 243, 0.5))'
+            }} 
+          />
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              color: 'white', 
+              fontWeight: 500,
+              textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            {selectedModel} Parameters
+          </Typography>
+        </Box>
         
+        <IconButton 
+          onClick={onClose} 
+          edge="end" 
+          sx={{ 
+            color: 'rgba(255, 255, 255, 0.7)',
+            '&:hover': {
+              color: '#fff',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)'
+            }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      <DialogContent 
+        sx={{ 
+          py: 3, 
+          px: 3, 
+          overflowY: 'auto',
+          background: 'rgba(0, 0, 0, 0.1)',
+          backdropFilter: 'blur(10px)'
+        }}
+      >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* Toggle for showing/hiding predicted impact */}
+          {hasMetricsData && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -1, mb: -2 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showPreviewPanel}
+                    onChange={(e) => setShowPreviewPanel(e.target.checked)}
+                    color="primary"
+                    size="small"
+                  />
+                }
+                label={
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    Show predictions
+                  </Typography>
+                }
+                sx={{ mr: 0 }}
+              />
+            </Box>
+          )}
+          
           {/* Parameter controls */}
           {Object.keys(localValues).map((key) => {
             const field = key as keyof ThresholdValues;
@@ -225,22 +308,43 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
             if (!isRelevant) return null;
             
             return (
-              <Box key={field} sx={{ position: 'relative' }}>
-                <Typography variant="subtitle1" sx={{
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontWeight: 500,
-                  mb: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
+              <Paper 
+                key={field} 
+                elevation={0}
+                sx={{ 
+                  position: 'relative',
+                  p: 2.5,
+                  borderRadius: '12px',
+                  background: 'rgba(33, 150, 243, 0.05)', 
+                  border: '1px solid rgba(33, 150, 243, 0.15)',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    background: 'rgba(33, 150, 243, 0.08)',
+                    borderColor: 'rgba(33, 150, 243, 0.25)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.1)'
+                  }
+                }}
+              >
+                <Typography 
+                  variant="subtitle1" 
+                  sx={{
+                    color: 'rgba(255, 255, 255, 0.95)',
+                    fontWeight: 600,
+                    mb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontSize: '1.1rem'
+                  }}
+                >
                   {field.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                  <Typography variant="body2" sx={{ fontWeight: 'normal', color: 'rgba(255, 255, 255, 0.6)' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'normal', color: '#2196F3' }}>
                     Current: {thresholds[field]}
                   </Typography>
                 </Typography>
                 
-                <Box sx={{ px: 1, mb: 1 }}>
+                <Box sx={{ px: 1, mb: 1.5 }}>
                   <Slider
                     value={localValues[field]}
                     onChange={(_, value) => handleValueChange(field, value as number)}
@@ -253,31 +357,47 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                       { value: max, label: max.toString() }
                     ]}
                     sx={{
-                      color: commonStyles.colors.primary,
+                      color: '#2196F3',
                       '& .MuiSlider-thumb': {
-                        height: 20,
-                        width: 20,
+                        width: 22,
+                        height: 22,
+                        background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
+                        boxShadow: '0 0 10px rgba(33, 150, 243, 0.5)',
+                        '&:hover, &.Mui-focusVisible': {
+                          boxShadow: '0 0 0 8px rgba(33, 150, 243, 0.16)'
+                        },
+                        '&.Mui-active': {
+                          boxShadow: '0 0 0 12px rgba(33, 150, 243, 0.16)'
+                        }
                       },
                       '& .MuiSlider-track': {
-                        height: 6,
-                        borderRadius: 3,
+                        height: 8,
+                        borderRadius: 4,
+                        background: 'linear-gradient(90deg, #2196F3, #21CBF3)',
                       },
                       '& .MuiSlider-rail': {
-                        height: 6,
-                        borderRadius: 3,
-                        opacity: 0.3,
+                        height: 8,
+                        borderRadius: 4,
+                        opacity: 0.5,
+                        backgroundColor: 'rgba(255, 255, 255, 0.15)',
                       },
                       '& .MuiSlider-mark': {
                         backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                        height: 8,
+                        width: 2,
+                        '&.MuiSlider-markActive': {
+                          backgroundColor: 'currentColor',
+                        }
                       },
                       '& .MuiSlider-markLabel': {
-                        color: 'rgba(255, 255, 255, 0.5)',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.75rem',
                       },
                     }}
                   />
                 </Box>
                 
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <TextField
                     value={localValues[field]}
                     onChange={(e) => {
@@ -290,13 +410,23 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                     size="small"
                     type="number"
                     InputProps={{
-                      inputProps: { min, max, step: field === 'threshold' ? 0.01 : 1 }
+                      inputProps: { min, max, step: field === 'threshold' ? 0.01 : 1 },
+                      sx: {
+                        color: '#2196F3',
+                        fontWeight: 600,
+                      }
                     }}
                     sx={{
                       width: '100px',
                       '& .MuiOutlinedInput-root': {
                         background: 'rgba(0, 0, 0, 0.2)',
-                        color: commonStyles.colors.primary,
+                        borderRadius: '8px',
+                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(33, 150, 243, 0.5)',
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#2196F3',
+                        }
                       },
                       '& .MuiOutlinedInput-notchedOutline': {
                         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -305,43 +435,68 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                   />
                   
                   <Typography 
-                    variant="caption" 
+                    variant="body2" 
                     sx={{ 
-                      color: 'rgba(255, 255, 255, 0.5)',
-                      maxWidth: '75%'
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      maxWidth: '75%',
+                      fontStyle: 'italic',
+                      fontSize: '0.85rem'
                     }}
                   >
                     {getFieldDescription(field)}
                   </Typography>
                 </Box>
-                
-                {/* Show divider between parameters */}
-                {field !== 'threshold' && <Divider sx={{ mt: 2, bgcolor: 'rgba(255, 255, 255, 0.1)' }} />}
-              </Box>
+              </Paper>
             );
           })}
           
-          {/* Impact preview - Only show if metrics data is available */}
-          {hasMetricsData && (
+          {/* Impact preview - Only show if metrics data is available and toggle is on */}
+          {hasMetricsData && showPreviewPanel && (
             <Paper sx={{ 
-              bgcolor: 'rgba(33, 150, 243, 0.1)',
+              bgcolor: 'rgba(33, 150, 243, 0.08)',
               border: '1px solid rgba(33, 150, 243, 0.2)',
               borderRadius: '12px',
-              p: 2,
-              mt: 2
+              p: 3,
+              mt: 1,
+              background: 'linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(66, 165, 245, 0.15) 100%)',
             }}>
-              <Typography variant="subtitle1" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 2, fontWeight: 500 }}>
-                Predicted Impact
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ 
+                  width: 36, 
+                  height: 36, 
+                  borderRadius: '50%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  background: 'linear-gradient(45deg, #2196F3, #21CBF3)',
+                  boxShadow: '0 4px 10px rgba(33, 150, 243, 0.5)',
+                  mr: 2
+                }}>
+                  <SettingsIcon sx={{ color: 'white', fontSize: 20 }} />
+                </Box>
+                <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: 600 }}>
+                  Predicted Impact
+                </Typography>
+              </Box>
               
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', 
+                gap: 3, 
+                mb: 3 
+              }}>
                 {/* Accuracy Impact */}
-                <Box>
+                <Box sx={{
+                  bgcolor: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '8px',
+                  p: 2,
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
                   <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     Accuracy
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 500, color: 'white' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'white' }}>
                       {(predictedImpact.accuracy * 100).toFixed(1)}%
                     </Typography>
                     {currentMetrics?.accuracy && (
@@ -350,7 +505,10 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                           ? 'rgba(0, 230, 118, 0.9)' 
                           : predictedImpact.accuracy < (currentMetrics.accuracy || 0)
                             ? 'rgba(255, 107, 107, 0.9)'
-                            : 'rgba(255, 255, 255, 0.5)'
+                            : 'rgba(255, 255, 255, 0.5)',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center'
                       }}>
                         {predictedImpact.accuracy > (currentMetrics.accuracy || 0)
                           ? `+${((predictedImpact.accuracy - (currentMetrics.accuracy || 0)) * 100).toFixed(1)}%`
@@ -364,12 +522,17 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                 </Box>
                 
                 {/* F1 Score Impact */}
-                <Box>
+                <Box sx={{
+                  bgcolor: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '8px',
+                  p: 2,
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
                   <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     F1 Score
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 500, color: 'white' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'white' }}>
                       {predictedImpact.f1Score.toFixed(2)}
                     </Typography>
                     {currentMetrics?.f1_score && (
@@ -378,7 +541,8 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                           ? 'rgba(0, 230, 118, 0.9)' 
                           : predictedImpact.f1Score < (currentMetrics.f1_score || 0)
                             ? 'rgba(255, 107, 107, 0.9)'
-                            : 'rgba(255, 255, 255, 0.5)'
+                            : 'rgba(255, 255, 255, 0.5)',
+                        fontWeight: 600
                       }}>
                         {predictedImpact.f1Score > (currentMetrics.f1_score || 0)
                           ? `+${(predictedImpact.f1Score - (currentMetrics.f1_score || 0)).toFixed(2)}`
@@ -392,12 +556,17 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                 </Box>
                 
                 {/* False Positive Rate Impact */}
-                <Box>
+                <Box sx={{
+                  bgcolor: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '8px',
+                  p: 2,
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
                   <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     False Positive Rate
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 500, color: 'white' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'white' }}>
                       {(predictedImpact.falsePositiveRate * 100).toFixed(1)}%
                     </Typography>
                     {currentMetrics?.falsePositiveRate && (
@@ -406,7 +575,8 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                           ? 'rgba(0, 230, 118, 0.9)' 
                           : predictedImpact.falsePositiveRate > (currentMetrics.falsePositiveRate || 0)
                             ? 'rgba(255, 107, 107, 0.9)'
-                            : 'rgba(255, 255, 255, 0.5)'
+                            : 'rgba(255, 255, 255, 0.5)',
+                        fontWeight: 600
                       }}>
                         {predictedImpact.falsePositiveRate < (currentMetrics.falsePositiveRate || 0)
                           ? `${((predictedImpact.falsePositiveRate - (currentMetrics.falsePositiveRate || 0)) * 100).toFixed(1)}%`
@@ -420,12 +590,17 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                 </Box>
                 
                 {/* False Negative Rate Impact */}
-                <Box>
+                <Box sx={{
+                  bgcolor: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '8px',
+                  p: 2,
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
                   <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     False Negative Rate
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 500, color: 'white' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'white' }}>
                       {(predictedImpact.falseNegativeRate * 100).toFixed(1)}%
                     </Typography>
                     {currentMetrics?.falseNegativeRate && (
@@ -434,7 +609,8 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                           ? 'rgba(0, 230, 118, 0.9)' 
                           : predictedImpact.falseNegativeRate > (currentMetrics.falseNegativeRate || 0)
                             ? 'rgba(255, 107, 107, 0.9)'
-                            : 'rgba(255, 255, 255, 0.5)'
+                            : 'rgba(255, 255, 255, 0.5)',
+                        fontWeight: 600
                       }}>
                         {predictedImpact.falseNegativeRate < (currentMetrics.falseNegativeRate || 0)
                           ? `${((predictedImpact.falseNegativeRate - (currentMetrics.falseNegativeRate || 0)) * 100).toFixed(1)}%`
@@ -448,17 +624,23 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                 </Box>
                 
                 {/* Detected Fraud Count */}
-                <Box>
+                <Box sx={{
+                  bgcolor: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '8px',
+                  p: 2,
+                  border: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
                   <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     Detected Fraud
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                    <Typography variant="body1" sx={{ fontWeight: 500, color: 'white' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, color: 'white' }}>
                       {Math.round(predictedImpact.fraudCount)}
                     </Typography>
                     {currentMetrics?.fraudCount && (
                       <Typography variant="caption" sx={{ 
-                        color: 'rgba(255, 255, 255, 0.5)'
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontWeight: 600
                       }}>
                         {predictedImpact.fraudCount > (currentMetrics.fraudCount || 0)
                           ? `+${Math.round(predictedImpact.fraudCount - (currentMetrics.fraudCount || 0))}`
@@ -470,21 +652,33 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                     )}
                   </Box>
                 </Box>
-                
-                {/* Financial Impact */}
-                <Box sx={{ 
-                  gridColumn: '1 / -1',
-                  mt: 1,
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 1,
-                  p: 1.5,
-                  bgcolor: 'rgba(0, 0, 0, 0.2)',
-                  borderRadius: '8px'
-                }}>
-                  <AttachMoneyIcon sx={{ color: 'rgba(0,230,118,0.8)', mt: 0.5 }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                    <strong>Financial Impact:</strong> {' '}
+              </Box>
+              
+              {/* Financial Impact */}
+              <Box sx={{ 
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 2,
+                p: 2.5,
+                bgcolor: 'rgba(0, 0, 0, 0.25)',
+                borderRadius: '12px',
+                border: '1px solid rgba(0, 230, 118, 0.25)',
+              }}>
+                <AttachMoneyIcon sx={{ 
+                  color: 'rgba(0, 230, 118, 0.9)', 
+                  mt: 0.5,
+                  fontSize: 30,
+                  filter: 'drop-shadow(0 0 6px rgba(0, 230, 118, 0.5))' 
+                }} />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ 
+                    color: 'rgba(0, 230, 118, 0.9)', 
+                    fontWeight: 600, 
+                    mb: 0.5 
+                  }}>
+                    Financial Impact
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                     {currentMetrics?.falsePositiveRate && currentMetrics?.falseNegativeRate && (
                       <>
                         Estimated cost savings of approximately ${Math.round(
@@ -492,7 +686,7 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
                           25 * ((currentMetrics.falsePositiveRate || 0) - predictedImpact.falsePositiveRate) * 10000 +
                           // Cost of false negatives (each costs ~$1000)
                           1000 * ((currentMetrics.falseNegativeRate || 0) - predictedImpact.falseNegativeRate) * 100
-                        )} per 10,000 transactions compared to current settings.
+                        ).toLocaleString()} per 10,000 transactions compared to current settings.
                       </>
                     )}
                   </Typography>
@@ -502,10 +696,21 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
           )}
         </Box>
       </DialogContent>
+
       <DialogActions sx={{ 
         p: 3, 
-        pt: 1,
-        justifyContent: 'space-between'
+        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+        justifyContent: 'space-between',
+        position: 'relative',
+        '&:before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '5%',
+          width: '90%',
+          height: '1px',
+          background: 'linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.6), transparent)',
+        }
       }}>
         <Button 
           onClick={onClose}
@@ -513,8 +718,12 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
             color: 'rgba(255, 255, 255, 0.7)',
             borderRadius: '8px',
             px: 2,
+            py: 1,
+            textTransform: 'none',
+            fontWeight: 500,
             '&:hover': {
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              color: 'white',
             },
           }}
         >
@@ -527,17 +736,24 @@ const ModelSettingsDialog: React.FC<ModelSettingsDialogProps> = ({
           disabled={JSON.stringify(localValues) === JSON.stringify(thresholds)}
           sx={{ 
             background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-            boxShadow: '0 3px 10px rgba(33, 203, 243, .3)',
+            boxShadow: '0 5px 15px rgba(33, 203, 243, .3)',
             borderRadius: '8px',
             px: 3,
-            fontWeight: 500,
+            py: 1,
+            fontWeight: 600,
+            textTransform: 'none',
+            transition: 'all 0.3s',
+            '&:hover': {
+              boxShadow: '0 8px 20px rgba(33, 203, 243, .5)',
+              transform: 'translateY(-2px)',
+            },
             '&.Mui-disabled': {
               background: 'rgba(33, 150, 243, 0.1)',
               color: 'rgba(255, 255, 255, 0.3)'
             }
           }}
         >
-          Apply & Run
+          Apply & Run Model
         </Button>
       </DialogActions>
     </Dialog>

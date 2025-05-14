@@ -17,9 +17,14 @@ interface RFTreeNode {
   parent?: RFTreeNode;
 }
 
+// Extend props to include animationSpeed
+interface RandomForestTreeProps extends TreeVisualizationProps {
+  animationSpeed?: number;
+}
+
 // Component implementation
-const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((props, ref) => {
-  const { thresholds, onComplete, autoStart = false } = props;
+const RandomForestTree = forwardRef<HTMLDivElement, RandomForestTreeProps>((props, ref) => {
+  const { thresholds, onComplete, autoStart = false, animationSpeed = 300 } = props;
   
   // State
   const [animationActive, setAnimationActive] = useState<boolean>(false);
@@ -401,7 +406,7 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
       setElapsedTime((Date.now() - startTime) / 1000);
     }, 100);
     
-    // Process animation steps
+    // Process animation steps - Use animationSpeed prop here
     animationRef.current = window.setInterval(() => {
       try {
         treeSteps++;
@@ -475,7 +480,7 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
         treeRef.current = createTree();
         drawTree(treeRef.current);
       }
-    }, 300);  // Animation speed: 300ms per step
+    }, animationSpeed);  // Use animationSpeed parameter from props
     
     return () => {
       // Cleanup function for the animation
@@ -488,7 +493,7 @@ const RandomForestTree = forwardRef<HTMLDivElement, TreeVisualizationProps>((pro
         timerRef.current = null;
       }
     };
-  }, [animationActive, createTree, drawTree, splitNode, findRandomLeafNode, thresholds, onComplete, isConnected, MAX_DEPTH]);
+  }, [animationActive, createTree, drawTree, splitNode, findRandomLeafNode, thresholds, onComplete, isConnected, MAX_DEPTH, animationSpeed]);
   
   // Clean up on unmount
   useEffect(() => {
