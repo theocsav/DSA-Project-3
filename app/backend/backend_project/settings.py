@@ -10,22 +10,23 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-e7@o%iyx+ar*k5hv1w**&8_yydp_0kgk3e8qt6jhfdh20a7=rz'
+# Set this in the environment or a separate file that's not in version control
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError("DJANGO_SECRET_KEY environment variable not set")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+# Use your server IP and subdomain
+ALLOWED_HOSTS = ['129.213.22.203', 'fraud.apps.dj', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -38,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'transactions', # For the database
-    'isolation_forest', # For isolution Forest
+    'isolation_forest', # For isolation Forest
     'random_forest', # For random forest
     'corsheaders',  # For frontend 
 ]
@@ -120,10 +121,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-CORS_ALLOW_ALL_ORIGINS = True
+
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "http://129.213.22.203",
+    "https://129.213.22.203",
+    "http://fraud.apps.dj",
+    "https://fraud.apps.dj", 
+    "http://localhost:5173"  # For local development
+]
